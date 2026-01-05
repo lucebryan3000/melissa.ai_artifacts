@@ -1,1 +1,26 @@
-
+version: 1.0
+core_flags:
+  - id: missing_doc_id
+    severity: CRITICAL
+    check: "Missing doc_id (or type-specific id alias)"
+  - id: missing_name_or_why_now
+    severity: CRITICAL
+    check: "Missing name or why_now"
+  - id: invalid_or_missing_status
+    severity: CRITICAL
+    check: "Missing status or status not in taxonomy"
+  - id: missing_owner_backup
+    severity: CRITICAL
+    check: "Missing owner or backup_owner"
+  - id: missing_links_block
+    severity: WARN
+    check: "Missing required links keys block (keys must exist)"
+  - id: missing_gate_summary_block
+    severity: WARN
+    check: "Missing gate_summary key"
+  - id: missing_decision_log_post_p0
+    severity: WARN
+    check: "No decisions entries when status >= p0_problem"
+  - id: frontmatter_schema_violation
+    severity: CRITICAL
+    check: "Frontmatter fails schema validation"
