@@ -1,6 +1,6 @@
 # Script Creator Playbook
 ID: SCP-001
-Version: 1.6
+Version: 1.7
 Status: Authoritative
 Applies To: ops-script-library
 Audience: Humans and AI systems (Melissa.ai)
@@ -115,11 +115,11 @@ Options:
 Choose exactly one target:
 - azure
 - aws
+- m365
 - windows
 - macos
 - ubuntu
 - sql
-- m365
 
 Declare OS support:
 ```yaml
@@ -143,8 +143,8 @@ Choose exactly one:
 
 * powershell
 * bash
-* sql
 * python
+* sql
 
 Declare minimum runtime version.
 
@@ -185,6 +185,7 @@ Every package MUST use `.env`-style files to reduce hard-coding and standardize 
 
 * `.env` files are the authoritative mechanism for documenting and loading environment variables.
 * Scripts remain runnable standalone; they MUST be able to load `.env` files without orchestration.
+* Orchestration/CI MAY inject environment variables, but scripts MUST behave predictably under that condition (see precedence rules).
 
 #### 4.6.2 Canonical `.env` Naming (OS + Target Layering, No Combos)
 
@@ -199,10 +200,14 @@ Repo-level files (at repo root):
 Package-level files (in the same folder as the package script):
 
 * `<package-id>.env`
-* `<package-id>.windows` | `<package-id>.macos` | `<package-id>.ubuntu`
+* `<package-id>.env.windows` | `<package-id>.env.macos` | `<package-id>.env.ubuntu`
 * Optional target layers:
 
-  * `<package-id>.azure` | `<package-id>.aws` | `<package-id>.m365` | `<package-id>.sql`
+  * `<package-id>.env.azure` | `<package-id>.env.aws` | `<package-id>.env.m365` | `<package-id>.env.sql`
+
+Notes:
+
+* This convention is intentionally explicit to avoid overly-broad `.gitignore` patterns and accidental ignores.
 
 #### 4.6.3 Git Policy: `.example` Shadow Files (MANDATORY)
 
@@ -212,8 +217,34 @@ Package-level files (in the same folder as the package script):
 
 Examples:
 
-* Committed: `.env.master.example`, `.env.windows.example`, `.env.azure.example`, `<package-id>.env.example`, `<package-id>.windows.example`, `<package-id>.azure.example`
-* Local only: `.env.master`, `.env.windows`, `.env.azure`, `<package-id>.env`, `<package-id>.windows`, `<package-id>.azure`
+* Committed: `.env.master.example`, `.env.windows.example`, `.env.azure.example`, `<package-id>.env.example`, `<package-id>.env.windows.example`, `<package-id>.env.azure.example`
+* Local only: `.env.master`, `.env.windows`, `.env.azure`, `<package-id>.env`, `<package-id>.env.windows`, `<package-id>.env.azure`
+
+##### 4.6.3.1 Required `.gitignore` Coverage (MANDATORY)
+
+Repo maintainers MUST ensure `.gitignore` prevents committing secret-bearing `.env` files while allowing `*.example`.
+
+At minimum, the repo MUST ignore:
+
+* `.env.master`
+* `.env.windows`
+* `.env.macos`
+* `.env.ubuntu`
+* `.env.azure`
+* `.env.aws`
+* `.env.m365`
+* `.env.sql`
+
+And within package folders (recommended using path-based patterns), ignore:
+
+* `**/*.env`
+* `**/*.env.*`
+
+But MUST NOT ignore:
+
+* `**/*.example`
+
+(Exact `.gitignore` implementation is up to repo maintainers, but the behavior above is mandatory.)
 
 #### 4.6.4 Repo Root Discovery Rule (MANDATORY)
 
@@ -230,36 +261,93 @@ Each runtime entrypoint MUST implement the same algorithm.
 Precedence order (highest → lowest):
 
 1. CLI parameters (if applicable)
-2. Package OS layer: `<package-id>.(windows|macos|ubuntu)`
-3. Package target layer: `<package-id>.(azure|aws|m365|sql)`
-4. Package base: `<package-id>.env`
-5. Repo OS layer: `.env.(windows|macos|ubuntu)`
-6. Repo target layer: `.env.(azure|aws|m365|sql)`
-7. Repo master: `.env.master`
+2. Process environment variables already set (CI/orchestration/shell)
+3. Package OS layer: `<package-id>.env.(windows|macos|ubuntu)`
+4. Package target layer: `<package-id>.env.(azure|aws|m365|sql)`
+5. Package base: `<package-id>.env`
+6. Repo OS layer: `.env.(windows|macos|ubuntu)`
+7. Repo target layer: `.env.(azure|aws|m365|sql)`
+8. Repo master: `.env.master`
 
 Rules:
 
 * Only load non-`.example` files.
-* Missing env files are allowed; missing REQUIRED variables are not (fail fast).
-* If the same key is defined multiple times, the higher-precedence source wins.
+* Missing env files are allowed.
+* Env file loading MUST NOT override keys that already exist in the process environment.
+
+  * Env files only fill missing keys.
+* If the same key is defined in multiple env files, the higher-precedence source wins.
+* Required-variable validation happens after env loading (see §4.6.8).
 
 #### 4.6.6 DRY_RUN Contract (MANDATORY)
 
 Scripts MUST support dry-run as a guardrail where applicable.
 
-* Env var: `DRY_RUN` (truthy values are implementation-defined but MUST be documented)
+* Env var: `DRY_RUN`
 * Parameter: `-dry-run` (canonical spelling in docs/examples; runtime-specific parsing is allowed)
 
 Precedence:
 
-* Explicit parameter overrides env var.
+* Explicit parameter overrides `DRY_RUN`.
 * When dry-run is active, scripts MUST disable external side effects.
+
+##### 4.6.6.1 DRY_RUN Truth Table (MANDATORY)
+
+Case-insensitive:
+
+Truthy:
+
+* `1`, `true`, `yes`, `y`, `on`
+
+Falsey:
+
+* `0`, `false`, `no`, `n`, `off`, empty/unset
+
+If `DRY_RUN` is set to any other value:
+
+* Fail fast with an actionable message.
+
+#### 4.6.7 Dotenv Parsing Contract (MANDATORY, Cross-Runtime)
+
+Parsing MUST be strict and minimal to prevent drift and unsafe behavior.
+
+Allowed:
+
+* `KEY=VALUE`
+* Blank lines
+* Full-line comments beginning with `#`
+* Optional surrounding single or double quotes around VALUE
+
+Not allowed:
+
+* `export KEY=VALUE`
+* Variable expansion (`$VAR`, `${VAR}`)
+* Multiline values
+* Command substitution
+* `eval`-style processing
+* “Sourcing” the env file as code
+
+Whitespace rules:
+
+* KEY is trimmed.
+* For unquoted VALUE: leading/trailing whitespace is trimmed.
+* For quoted VALUE: outer quotes are removed; inner whitespace is preserved exactly.
+
+#### 4.6.8 Required vs Optional Variables (MANDATORY)
+
+Every script MUST define which environment variables it requires and validate them.
+
+Rules:
+
+* Runtime enforcement source of truth: the script defines a `RequiredEnvVars` list (runtime-native construct) and validates after env loading.
+* Documentation: frontmatter MUST list required and optional env vars with brief purpose statements.
+* `.env.*.example` files mirror the documented variables as templates (derivative; never runtime-loaded).
 
 ---
 
 ### 4.7 Repo Configuration & Bootstrap Contract (MANDATORY, NEW)
 
-This contract is PowerShell-scoped for config/bootstrap, but repo-root discovery is global (see 4.6.4).
+This contract is PowerShell-scoped for config/bootstrap, but repo-root discovery is global (see §4.6.4).
 
 #### 4.7.1 Authoritative Defaults (Repo-Wide)
 
@@ -296,7 +384,7 @@ Strict package mapping is required for all packages.
 Rules:
 
 * Package folder name MUST equal Package ID
-* Primary script name MUST equal Package ID
+* Primary entry script name MUST equal Package ID (with runtime extension)
 
 Required paths:
 
@@ -333,14 +421,39 @@ Frontmatter MUST declare:
 * OS support
 * Runtime requirements
 * Tooling requirements
-* Parameters
-* Environment variables (including DRY_RUN and `.env` contract references)
+* Parameters (including `-dry-run` where applicable)
+* Environment variables:
+
+  * Required vars list
+  * Optional vars list
+  * DRY_RUN behavior
+  * `.env` contract summary (what files it loads, and precedence)
 * Usage examples (including `-dry-run` examples where applicable)
 * `--help` / `-Help` behavior
 
 ---
 
-### 5.1.1 PowerShell Script Creation Standard (Consistency + Repo Decisions)
+### 5.1.1 Env Loader Requirements (All Runtimes) (MANDATORY)
+
+Each runtime MUST implement env loading per Mode A §4.6.
+
+Security requirements:
+
+* Implement parsing as data parsing, never as code execution.
+* Bash MUST NOT `source` env files and MUST NOT use `eval`.
+* PowerShell MUST NOT dot-source env files and MUST NOT invoke expressions.
+* Python MUST parse `.env` files without executing code.
+
+Behavioral requirements:
+
+* Must discover repo root by searching for `master-package.config.psd1` (see §4.6.4).
+* Must ignore `*.example` at runtime.
+* Must not override pre-set process environment variables.
+* Must validate required env vars after loading (see §4.6.8).
+
+---
+
+### 5.1.2 PowerShell Script Creation Standard (Consistency + Repo Decisions)
 
 This subsection defines the mandatory, repeatable structure for creating PowerShell scripts in `ops-script-library`.
 
@@ -360,9 +473,10 @@ Every PowerShell script MUST follow this internal structure:
 
 3. `.env` Loading (MANDATORY)
 
-* Implement Mode A §4.6 env loading algorithm and precedence
+* Implement Mode A §4.6 env loading algorithm and parsing contract
 * Ignore `*.example` at runtime
-* Fail fast if required variables are missing
+* Do NOT override existing process env variables
+* Validate required env vars after loading
 
 4. Bootstrap + Config (PowerShell Runtime)
 
@@ -379,7 +493,9 @@ Every PowerShell script MUST follow this internal structure:
 6. `[CmdletBinding()]` + Parameter Block
 
 * Use advanced function style even in scripts
-* Include `-dry-run` (canonical spelling in docs/examples; implement as a switch, optionally with aliases)
+* Implement a `-DryRun` switch parameter and document spelling as `-dry-run` in examples
+
+  * Parameter overrides `DRY_RUN`
 * Parameter attributes:
 
   * types
@@ -388,23 +504,18 @@ Every PowerShell script MUST follow this internal structure:
 
 7. Begin/Process/End Pattern (when pipeline input is supported)
 
-* `begin {}`: environment validation + dependency checks + setup
+* `begin {}`: env validation + dependency checks + setup
 * `process {}`: core work per input item
 * `end {}`: final output/summary, cleanup
 
-8. Environment Validation and Context Lock
-
-* Validate required env vars and auth context before any external action
-* If validation fails: terminate with actionable error
-
-9. Output Contract (Objects First)
+8. Output Contract (Objects First)
 
 * Return structured objects or JSON
 * Do not call `Format-*` in core logic
 * Avoid `Write-Host` except explicitly interactive UX
 * Use `Write-Verbose`, `Write-Information`, `Write-Warning`, `Write-Error`
 
-10. Mutations Must Use `ShouldProcess`
+9. Mutations Must Use `ShouldProcess`
 
 * If scope is Write/Destructive:
 
@@ -412,20 +523,20 @@ Every PowerShell script MUST follow this internal structure:
   * honor `-WhatIf` and `-Confirm`
   * make side effects explicit
 
-11. Error Handling Contract
+10. Error Handling Contract
 
 * Use `try/catch/finally`
 * Use `-ErrorAction Stop` when the intention is to catch
 * Never swallow exceptions; handle or rethrow with context
 * Exit codes must be meaningful for automation (non-zero on fatal)
 
-12. Determinism / Idempotence
+11. Determinism / Idempotence
 
 * No prompts unless `-Interactive` (or `-Confirm` for destructive actions)
 * Re-runs should not drift; check state before changing state
 * When dry-run is active (env or param), external side effects MUST be disabled
 
-13. Logging / Auditability
+12. Logging / Auditability
 
 * Emit structured logs (recommended key/value or JSON)
 * Include at minimum:
@@ -445,7 +556,105 @@ Every PowerShell script MUST follow this internal structure:
 * Secrets must come from env vars/managed identity; no interactive credential prompts
 * Do not use `Write-Host` for operational output (interactive UX only)
 * Return objects; formatting is caller responsibility
-* If destructive: require HITL confirmation (as defined in 5.4)
+* If destructive: require HITL confirmation (as defined in §5.4)
+
+---
+
+### 5.1.3 Target Templates (Placeholders for Other Targets)
+
+All target templates MUST inherit global rules:
+
+* Mode A §4.6 env contract (naming, root discovery, precedence, parsing, required-var validation, ignore `.example`)
+* Mode B §5.2 determinism/output rules
+* Mode B §5.3 error handling rules
+* Mode B §5.4 HITL rules
+* Mode B §5.5 scope guardrails
+
+These are placeholders to be expanded over time.
+
+#### 5.1.3.1 Windows Script Template (Placeholder)
+
+Applies to: Windows-targeted automation not implemented in PowerShell (e.g., native tooling, vendor CLIs)
+
+Minimum requirements:
+
+* Standardized frontmatter
+* Implements env loading per §4.6
+* Deterministic structured output
+* Meaningful exit codes
+* DRY_RUN where applicable
+
+#### 5.1.3.2 Ubuntu Script Template (Placeholder)
+
+Applies to: bash or Linux-native operational scripting
+
+Minimum requirements:
+
+* Standardized frontmatter
+* Implements env loading per §4.6 (MUST NOT `source` or `eval`)
+* Deterministic structured output (JSON preferred)
+* Meaningful exit codes
+* DRY_RUN where applicable
+
+#### 5.1.3.3 AWS Script Template (Placeholder)
+
+Applies to: scripts that interact with AWS (CLI/SDK/Terraform wrappers, etc.)
+
+Minimum requirements:
+
+* Standardized frontmatter
+* Implements env loading per §4.6
+* Account/region guardrails
+* Deterministic structured output
+* DRY_RUN where applicable
+
+#### 5.1.3.4 Azure Script Template (Placeholder)
+
+Applies to: scripts that interact with Azure (Az CLI/Az PowerShell/Graph/etc.)
+
+Minimum requirements:
+
+* Standardized frontmatter
+* Implements env loading per §4.6
+* Tenant/subscription guardrails
+* Deterministic structured output
+* DRY_RUN where applicable
+
+#### 5.1.3.5 macOS Script Template (Placeholder)
+
+Applies to: zsh/bash scripts, vendor tools, MDM-related automation, etc.
+
+Minimum requirements:
+
+* Standardized frontmatter
+* Implements env loading per §4.6 (MUST NOT `source` or `eval`)
+* Deterministic structured output
+* Meaningful exit codes
+* DRY_RUN where applicable
+
+#### 5.1.3.6 SQL Script Template (Placeholder)
+
+Applies to: SQL scripts used for reporting, validation, migrations, and operational maintenance
+
+Minimum requirements:
+
+* Standardized frontmatter
+* Environment contract documented (how connection info is provided via env)
+* Transaction safety rules
+* ReadOnly vs Write vs Destructive rules
+* Deterministic output schema
+
+#### 5.1.3.7 Python Script Template (Placeholder)
+
+Applies to: Python operational scripts
+
+Minimum requirements:
+
+* Standardized frontmatter
+* Implements env loading per §4.6 (parse-only, no code execution)
+* Deterministic structured output (JSON preferred)
+* Meaningful exit codes
+* DRY_RUN where applicable
 
 ---
 
@@ -461,12 +670,12 @@ Scripts MUST:
 
 ---
 
-### 5.2.1 Orchestration Compatibility (MANDATORY, NEW)
+### 5.2.1 Orchestration Compatibility (MANDATORY)
 
 Orchestration modes are:
 
 * `plan` (orchestrator-only)
-* `dry-run` (orchestrator invokes scripts with `-dry-run` and/or `DRY_RUN=1`)
+* `dry-run` (orchestrator invokes scripts with `-dry-run` and/or `DRY_RUN=...`)
 * `run`
 
 Rules:
@@ -477,7 +686,7 @@ Rules:
 
 ---
 
-### 5.2.2 Artifacts & Governance Philosophy (GLOBAL RULE, NEW)
+### 5.2.2 Artifacts & Governance Philosophy (GLOBAL RULE)
 
 Operational scripts MUST follow the repo’s artifacts philosophy:
 
@@ -485,11 +694,54 @@ Operational scripts MUST follow the repo’s artifacts philosophy:
 * Governance outputs are generated only when governance steps run.
 * Operational scripts MUST NOT create governance artifacts.
 
-Note:
+---
 
-* Script-produced operational outputs MAY be written into `artifacts/` only when the script’s purpose explicitly calls for it and the output contract documents it.
+### 5.2.3 Governance Artifact Contract (Combined) (MANDATORY)
 
-(Combined-governance-file workstream is in progress and will be codified once filenames/paths are finalized.)
+Governance outputs are consolidated into one file to simplify manageability.
+
+#### Output File (Generated Only When Governance Runs)
+
+* `<package>/artifacts/governance.yaml`
+
+#### Governance Config (Master + Override)
+
+* Master config (committed): `<repo-root>/master-governance.config.yaml`
+* Package override config (committed, rare): `<package>/<package-id>.governance.config.yaml`
+
+Rules:
+
+* Overrides are intended to be rare and must be justified.
+* Tools SHOULD load master config, then apply package override if present.
+
+#### governance.yaml Schema (v1)
+
+Top-level keys:
+
+* `schema_version`
+* `package_id`
+* `generated_at`
+
+Sections:
+
+* `lint: { ... }`
+* `review: { ... }`
+* `policy: { ... }`
+
+#### Write/Merge Rules (MANDATORY)
+
+* Each producer step overwrites ONLY its own top-level section:
+
+  * Lint tooling writes/updates only `lint`
+  * Review process writes/updates only `review`
+  * Policy tooling writes/updates only `policy`
+* A step MUST NOT edit or delete other sections.
+
+#### Legacy Compatibility (Transition)
+
+* Legacy split files (`lint.yaml`, `review.yaml`, `policy.yaml`) are considered deprecated.
+* New governance runs MUST NOT create split files.
+* Tooling MAY optionally read legacy inputs during transition, but authoritative output is `governance.yaml`.
 
 ---
 
