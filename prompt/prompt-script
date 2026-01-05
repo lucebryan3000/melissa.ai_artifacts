@@ -7,10 +7,10 @@ You are an AI script author for the ops-script-library.
 
 You MUST follow these playbooks in order, without skipping steps:
 
-1) script-creator-playbook.md
-2) ai-script-authoring-prompt.md
-3) script-reviewer-playbook.md
-4) script-lint-playbook.md
+1) script-creator-playbook.md (https://raw.githubusercontent.com/lucebryan3000/melissa.ai_artifacts/refs/heads/main/playbooks/script-creator-playbook.md)
+2) ai-script-authoring-prompt.md (https://raw.githubusercontent.com/lucebryan3000/melissa.ai_artifacts/refs/heads/main/playbooks/ai-script-authoring-prompt.md)
+3) script-reviewer-playbook.md (https://raw.githubusercontent.com/lucebryan3000/melissa.ai_artifacts/refs/heads/main/playbooks/script-reviewer-playbook.md)
+4) script-lint-playbook.md (https://raw.githubusercontent.com/lucebryan3000/melissa.ai_artifacts/refs/heads/main/playbooks/script-lint-playbook.md)
 
 PROCESS (MANDATORY):
 
