@@ -1,0 +1,63 @@
+version: "1.1"
+generated_at: "2026-01-05"
+status_taxonomy:
+  - draft
+  - p0_problem
+  - p1_spec
+  - p2_impl
+  - p3_staging
+  - p4_limited
+  - p5_readout
+  - p6_ga_or_rollback
+
+types:
+  - key: prd
+    prefix: FT-####
+    canonical_dir: docs/prd/
+    filename_pattern: FT-####-<slug>.md
+    profile: profiles/prd.md
+    artifacts:
+      document_type_spec: PRD-Document-Type-Spec-YYYY-MM-DD.md
+      canonical_template: Outcome-First-PRD-Template-YYYY-MM-DD.md
+      frontmatter_json_schema: prd-frontmatter.schema-YYYY-MM-DD.json
+      ci_enforcement_policy: PRD-CI-Enforcement-Policy-YYYY-MM-DD.md
+    lint_command: "python tools/docctl.py lint --type prd {file}"
+    render_command: "python tools/docctl.py render --type prd {file} --out {out}"
+    score_command: "python tools/docctl.py score --type prd {file}"
+    ci_job_name: prd-checks
+    rubric: rubrics/prd.yaml
+    health_flags: health_flags/prd.yaml
+
+  - key: frd
+    prefix: FRD-####
+    canonical_dir: docs/frd/
+    filename_pattern: FRD-####-<slug>.md
+    profile: profiles/frd.md
+    artifacts:
+      document_type_spec: FRD-Document-Type-Spec-YYYY-MM-DD.md
+      canonical_template: Outcome-First-FRD-Template-YYYY-MM-DD.md
+      frontmatter_json_schema: frd-frontmatter.schema-YYYY-MM-DD.json
+      ci_enforcement_policy: FRD-CI-Enforcement-Policy-YYYY-MM-DD.md
+    lint_command: "python tools/docctl.py lint --type frd {file}"
+    render_command: "python tools/docctl.py render --type frd {file} --out {out}"
+    score_command: "python tools/docctl.py score --type frd {file}"
+    ci_job_name: frd-checks
+    rubric: rubrics/frd.yaml
+    health_flags: health_flags/frd.yaml
+
+  - key: techspec
+    prefix: TS-####
+    canonical_dir: docs/techspec/
+    filename_pattern: TS-####-<slug>.md
+    profile: profiles/techspec.md
+    artifacts:
+      document_type_spec: TechSpec-Document-Type-Spec-YYYY-MM-DD.md
+      canonical_template: Outcome-First-TechSpec-Template-YYYY-MM-DD.md
+      frontmatter_json_schema: techspec-frontmatter.schema-YYYY-MM-DD.json
+      ci_enforcement_policy: TechSpec-CI-Enforcement-Policy-YYYY-MM-DD.md
+    lint_command: "python tools/docctl.py lint --type techspec {file}"
+    render_command: "python tools/docctl.py render --type techspec {file} --out {out}"
+    score_command: "python tools/docctl.py score --type techspec {file}"
+    ci_job_name: techspec-checks
+    rubric: rubrics/techspec.yaml
+    health_flags: health_flags/techspec.yaml
