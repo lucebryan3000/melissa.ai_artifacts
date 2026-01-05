@@ -1,8 +1,8 @@
-# Script Creator Playbook  
-ID: SCP-001  
-Version: 1.5  
-Status: Authoritative  
-Applies To: ops-script-library  
+# Script Creator Playbook
+ID: SCP-001
+Version: 1.6
+Status: Authoritative
+Applies To: ops-script-library
 Audience: Humans and AI systems (Melissa.ai)
 
 ---
@@ -26,16 +26,16 @@ Any script that does not fully comply with this playbook MUST NOT be published, 
 
 All scripts MUST:
 
-1. Be single-purpose  
-2. Be non-interactive by default  
-3. Fail fast with actionable errors  
-4. Produce deterministic output  
-5. Declare scope honestly (ReadOnly vs Write vs Destructive)  
-6. Separate authoring, linting, and review  
-7. Be safe for CI and unattended execution  
-8. Make side effects explicit  
-9. Support human-in-the-loop (HITL) when appropriate  
-10. Prefer clarity over cleverness  
+1. Be single-purpose
+2. Be non-interactive by default
+3. Fail fast with actionable errors
+4. Produce deterministic output
+5. Declare scope honestly (ReadOnly vs Write vs Destructive)
+6. Separate authoring, linting, and review
+7. Be safe for CI and unattended execution
+8. Make side effects explicit
+9. Support human-in-the-loop (HITL) when appropriate
+10. Prefer clarity over cleverness
 
 Violation of any principle is a defect.
 
@@ -45,7 +45,7 @@ Violation of any principle is a defect.
 
 Scripts progress through explicit, gated plays:
 
-Mode A → Mode B → Mode C → Mode D  
+Mode A → Mode B → Mode C → Mode D
 Pre-Creation → Creation → Lint → Review
 
 Optional post-approval plays:
@@ -63,10 +63,10 @@ No play may be skipped.
 
 Every script MUST define:
 
-- **Package ID**  
+- Package ID
   Format: `domain.script-name` (kebab-case, immutable)
 
-- **Human Name**  
+- Human Name
   Imperative verb phrase describing exactly what the script does
 
 Example:
@@ -77,11 +77,10 @@ Human Name: Pull Microsoft Graph data from Azure AD
 
 ````
 
-#### Options
-1. **Single, narrowly scoped script** (recommended)  
-   Reason: Easier to review, lint, automate, and reason about  
-2. Multi-purpose script  
-3. Script that delegates to other scripts  
+Options:
+1. Single, narrowly scoped script (recommended)
+2. Multi-purpose script
+3. Script that delegates to other scripts
 
 ---
 
@@ -101,14 +100,13 @@ Every script MUST declare:
 
 Rules:
 - Scope MUST be accurate
-- Transitioning from ReadOnly → Write requires a **new script**
+- Transitioning from ReadOnly → Write requires a new script
 - Destructive scripts require explicit human confirmation
 
-#### Options
-1. **ReadOnly script** (recommended)  
-   Reason: Safest default, easiest to automate  
-2. Write script with safeguards  
-3. Destructive script with mandatory HITL  
+Options:
+1. ReadOnly script (recommended)
+2. Write script with safeguards
+3. Destructive script with mandatory HITL
 
 ---
 
@@ -121,6 +119,7 @@ Choose exactly one target:
 - macos
 - ubuntu
 - sql
+- m365
 
 Declare OS support:
 ```yaml
@@ -130,9 +129,9 @@ os:
     - optional
 ````
 
-#### Options
+Options:
 
-1. **Single primary OS, optional compatible OS** (recommended)
+1. Single primary OS, optional compatible OS (recommended)
 2. Multi-OS primary support
 3. OS-agnostic (rare, must justify)
 
@@ -145,12 +144,13 @@ Choose exactly one:
 * powershell
 * bash
 * sql
+* python
 
 Declare minimum runtime version.
 
-#### Options
+Options:
 
-1. **Modern, supported runtime** (recommended)
+1. Modern, supported runtime (recommended)
 2. Legacy runtime (discouraged)
 3. Multiple runtimes (requires justification)
 
@@ -169,40 +169,151 @@ Rules:
 * No floating versions
 * Fail fast if unmet
 
-#### Options
+Options:
 
-1. **Minimal, explicit tooling** (recommended)
+1. Minimal, explicit tooling (recommended)
 2. Broad tooling set
 3. Tool detection at runtime
 
 ---
 
-### 4.6 Environment Contract
+### 4.6 Environment Contract (MANDATORY, UPDATED)
 
-Declare:
+Every package MUST use `.env`-style files to reduce hard-coding and standardize environment injection.
 
-* Required environment variables
-* Optional environment variables
-* DRY_RUN support expectations
+#### 4.6.1 `.env` Files Are Required
+
+* `.env` files are the authoritative mechanism for documenting and loading environment variables.
+* Scripts remain runnable standalone; they MUST be able to load `.env` files without orchestration.
+
+#### 4.6.2 Canonical `.env` Naming (OS + Target Layering, No Combos)
+
+Repo-level files (at repo root):
+
+* `.env.master`
+* `.env.windows` | `.env.macos` | `.env.ubuntu`
+* Optional target layers:
+
+  * `.env.azure` | `.env.aws` | `.env.m365` | `.env.sql`
+
+Package-level files (in the same folder as the package script):
+
+* `<package-id>.env`
+* `<package-id>.windows` | `<package-id>.macos` | `<package-id>.ubuntu`
+* Optional target layers:
+
+  * `<package-id>.azure` | `<package-id>.aws` | `<package-id>.m365` | `<package-id>.sql`
+
+#### 4.6.3 Git Policy: `.example` Shadow Files (MANDATORY)
+
+* Committed files MUST be `*.example`.
+* Local secret-bearing files MUST NOT be committed and MUST be git-ignored.
+* Runtimes MUST ignore `*.example` at runtime (templates only).
+
+Examples:
+
+* Committed: `.env.master.example`, `.env.windows.example`, `.env.azure.example`, `<package-id>.env.example`, `<package-id>.windows.example`, `<package-id>.azure.example`
+* Local only: `.env.master`, `.env.windows`, `.env.azure`, `<package-id>.env`, `<package-id>.windows`, `<package-id>.azure`
+
+#### 4.6.4 Repo Root Discovery Rule (MANDATORY)
+
+All runtimes MUST discover repo root by searching upward from the script/package folder for:
+
+* `master-package.config.psd1`
+
+The first directory containing `master-package.config.psd1` is repo root.
+
+#### 4.6.5 Env Loading Algorithm (MANDATORY, Cross-Runtime)
+
+Each runtime entrypoint MUST implement the same algorithm.
+
+Precedence order (highest → lowest):
+
+1. CLI parameters (if applicable)
+2. Package OS layer: `<package-id>.(windows|macos|ubuntu)`
+3. Package target layer: `<package-id>.(azure|aws|m365|sql)`
+4. Package base: `<package-id>.env`
+5. Repo OS layer: `.env.(windows|macos|ubuntu)`
+6. Repo target layer: `.env.(azure|aws|m365|sql)`
+7. Repo master: `.env.master`
 
 Rules:
 
-* Secrets via environment variables or managed identity only
-* No prompting for secrets
-* DRY_RUN disables all external side effects (when applicable)
+* Only load non-`.example` files.
+* Missing env files are allowed; missing REQUIRED variables are not (fail fast).
+* If the same key is defined multiple times, the higher-precedence source wins.
 
-#### Options
+#### 4.6.6 DRY_RUN Contract (MANDATORY)
 
-1. **Env vars + DRY_RUN supported** (recommended)
-2. Env vars only
-3. Managed identity only
+Scripts MUST support dry-run as a guardrail where applicable.
+
+* Env var: `DRY_RUN` (truthy values are implementation-defined but MUST be documented)
+* Parameter: `-dry-run` (canonical spelling in docs/examples; runtime-specific parsing is allowed)
+
+Precedence:
+
+* Explicit parameter overrides env var.
+* When dry-run is active, scripts MUST disable external side effects.
+
+---
+
+### 4.7 Repo Configuration & Bootstrap Contract (MANDATORY, NEW)
+
+This contract is PowerShell-scoped for config/bootstrap, but repo-root discovery is global (see 4.6.4).
+
+#### 4.7.1 Authoritative Defaults (Repo-Wide)
+
+* Root config is `master-package.config.psd1` (authoritative defaults).
+
+#### 4.7.2 PowerShell Bootstrap (PowerShell Runtime Only)
+
+If `runtime=powershell`, scripts/tools MUST:
+
+* Locate repo root by searching upward for:
+
+  * `master-package.config.psd1`
+  * `ops.bootstrap.psm1`
+* Import `ops.bootstrap.psm1`
+* Call `Import-OpsPackageConfig`
+* MUST NOT manually merge configs
+
+#### 4.7.3 Config Override Model (Rare)
+
+Default behavior:
+
+* Use only `master-package.config.psd1`
+
+Optional overlay (rare):
+
+* If `package.config.psd1` exists in the same folder as the script/package, it overlays master.
+
+---
+
+### 4.8 Package Layout Mapping (MANDATORY, NEW)
+
+Strict package mapping is required for all packages.
+
+Rules:
+
+* Package folder name MUST equal Package ID
+* Primary script name MUST equal Package ID
+
+Required paths:
+
+* Package folder: `/<target>/<package-id>/`
+* Primary script: `/<target>/<package-id>/<package-id>.<ext>`
+
+Reserved subfolders (when applicable):
+
+* `artifacts/` → generated outputs (reports, json, csv, diagrams) and governance outputs produced by governance tooling
+* `examples/` → runnable examples (local/ci)
 
 ---
 
 ### Proceed to Next Play
 
-➡️ **Prompt:** Run Script Creation (Mode B)
-➡️ Next recommended play after completion: **Script Lint Playbook**
+➡️ Prompt: Run Script Creation (Mode B)
+➡️ Next recommended play after completion: Script Lint Playbook
 
 ---
 
@@ -223,17 +334,15 @@ Frontmatter MUST declare:
 * Runtime requirements
 * Tooling requirements
 * Parameters
-* Environment variables
-* Usage examples
+* Environment variables (including DRY_RUN and `.env` contract references)
+* Usage examples (including `-dry-run` examples where applicable)
 * `--help` / `-Help` behavior
-
-This is REQUIRED for **all scripts**, not optional.
 
 ---
 
 ### 5.1.1 PowerShell Script Creation Standard (Consistency + Repo Decisions)
 
-This subsection defines the mandatory, repeatable structure for creating PowerShell scripts in `ops-script-library`. Every PowerShell script MUST conform so that humans and AI systems can review, run, lint, automate, orchestrate, and govern consistently.
+This subsection defines the mandatory, repeatable structure for creating PowerShell scripts in `ops-script-library`.
 
 #### A) Mandatory Script Skeleton (PowerShell)
 
@@ -242,90 +351,90 @@ Every PowerShell script MUST follow this internal structure:
 1. Frontmatter + Comment-Based Help
 
 * `.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER`, `.EXAMPLE`, `.NOTES`
-* MUST match Mode A declarations (type, scope, target, OS, runtime, tooling, env vars)
+* MUST match Mode A declarations
 
-2. Repo Root Discovery + Bootstrap Import (MANDATORY)
+2. Repo Root Discovery (MANDATORY)
 
-* Scripts/tools MUST locate repo root by searching upward for:
+* Determine package folder (script directory)
+* Discover repo root by searching upward for `master-package.config.psd1`
 
-  * `master-package.config.psd1`
-  * `ops.bootstrap.psm1`
-* Scripts/tools MUST import `ops.bootstrap.psm1` and call `Import-OpsPackageConfig`
-* Scripts/tools MUST NOT manually merge configs
+3. `.env` Loading (MANDATORY)
 
-3. Config Resolution Order (MANDATORY)
+* Implement Mode A §4.6 env loading algorithm and precedence
+* Ignore `*.example` at runtime
+* Fail fast if required variables are missing
 
-* Default behavior: use only `master-package.config.psd1` (authoritative defaults)
-* Optional overlay (rare): if `package.config.psd1` exists **in the same folder as the script/package**, overlay it on master
-* Overlay is intended to be rare; do not create `package.config.psd1` unless justified during Mode A
+4. Bootstrap + Config (PowerShell Runtime)
 
-4. Requires / Version / Dependencies
+* Import `ops.bootstrap.psm1`
+* Call `Import-OpsPackageConfig`
+* MUST NOT manually merge configs
+* Optional overlay (rare): `package.config.psd1` in same folder overlays master
+
+5. Requires / Version / Dependencies
 
 * Declare minimum PowerShell version (and required modules if applicable)
 * Fail fast if prerequisites are not met
 
-5. `[CmdletBinding()]` + Parameter Block
+6. `[CmdletBinding()]` + Parameter Block
 
 * Use advanced function style even in scripts
+* Include `-dry-run` (canonical spelling in docs/examples; implement as a switch, optionally with aliases)
 * Parameter attributes:
 
   * types
   * validation (`ValidateSet/Pattern/Range/NotNullOrEmpty`)
   * parameter sets if needed
 
-6. Begin/Process/End Pattern (when pipeline input is supported)
+7. Begin/Process/End Pattern (when pipeline input is supported)
 
 * `begin {}`: environment validation + dependency checks + setup
 * `process {}`: core work per input item
 * `end {}`: final output/summary, cleanup
 
-7. Environment Validation and Context Lock
+8. Environment Validation and Context Lock
 
-* Validate:
-
-  * required env vars
-  * connectivity/auth context
-  * permissions and target reachability
+* Validate required env vars and auth context before any external action
 * If validation fails: terminate with actionable error
 
-8. Output Contract (Objects First)
+9. Output Contract (Objects First)
 
-* Scripts MUST return structured objects or JSON
+* Return structured objects or JSON
 * Do not call `Format-*` in core logic
 * Avoid `Write-Host` except explicitly interactive UX
 * Use `Write-Verbose`, `Write-Information`, `Write-Warning`, `Write-Error`
 
-9. Mutations Must Use `ShouldProcess`
+10. Mutations Must Use `ShouldProcess`
 
-* If scope is Write/Destructive, script MUST:
+* If scope is Write/Destructive:
 
   * implement `SupportsShouldProcess`
   * honor `-WhatIf` and `-Confirm`
   * make side effects explicit
 
-10. Error Handling Contract
+11. Error Handling Contract
 
 * Use `try/catch/finally`
 * Use `-ErrorAction Stop` when the intention is to catch
 * Never swallow exceptions; handle or rethrow with context
 * Exit codes must be meaningful for automation (non-zero on fatal)
 
-11. Determinism / Idempotence
+12. Determinism / Idempotence
 
 * No prompts unless `-Interactive` (or `-Confirm` for destructive actions)
 * Re-runs should not drift; check state before changing state
-* DRY_RUN is supported as a guardrail where applicable; DRY_RUN MUST disable external side effects
+* When dry-run is active (env or param), external side effects MUST be disabled
 
-12. Logging / Auditability
+13. Logging / Auditability
 
 * Emit structured logs (recommended key/value or JSON)
 * Include at minimum:
 
-  * script ID
+  * script/package ID
   * timestamp
   * correlation/run ID
   * target identifier(s)
-  * scope (ReadOnly/Write/Destructive)
+  * scope
   * result status per item
 
 #### B) PowerShell-Specific Rules (Non-Negotiable)
@@ -338,249 +447,6 @@ Every PowerShell script MUST follow this internal structure:
 * Return objects; formatting is caller responsibility
 * If destructive: require HITL confirmation (as defined in 5.4)
 
-#### C) Artifacts & Governance (Repo Decision Alignment)
-
-Operational scripts MUST follow the repo’s artifacts philosophy:
-
-* No placeholder governance artifacts.
-* `lint.yaml`, `review.yaml`, `policy.yaml` are generated only when their governance steps run.
-* Operational scripts do not create governance artifacts.
-* Script-produced operational outputs MAY be written into `artifacts/` (reports, json, csv, diagrams) only when the script’s purpose explicitly calls for it and the output contract documents it.
-
-Governance tooling behavior (for awareness):
-
-* `Invoke-ScriptLint.ps1` writes `lint.yaml` (v1.1) to the package’s `artifacts/`.
-* `Evaluate-Policy.ps1` reads `lint.yaml` + `review.yaml` and writes `policy.yaml`.
-* `review.yaml` is produced by the review process (human/AI), not preseeded.
-
----
-
-#### PowerShell Script Creation Checklist (SCP-001 / Mode B)
-
-Identity & Declaration
-
-* [ ] Package ID and Human Name present and accurate
-* [ ] Script type declared (Operational/Validation/Reporting/Orchestration)
-* [ ] Scope declared and accurate (ReadOnly/Write/Destructive)
-* [ ] Target declared (azure/aws/windows/macos/ubuntu/sql)
-* [ ] OS support declared (primary + compatible list)
-* [ ] Minimum PowerShell version declared
-
-Repo Bootstrap & Config
-
-* [ ] Repo root discovery uses upward search for `master-package.config.psd1` + `ops.bootstrap.psm1`
-* [ ] Script imports `ops.bootstrap.psm1` and calls `Import-OpsPackageConfig`
-* [ ] Script does not manually merge configs
-* [ ] Optional `package.config.psd1` overlay is supported (only if present in same folder) and justified
-
-Interface & Help
-
-* [ ] Comment-based help includes Synopsis, Description, Parameters, Examples
-* [ ] `-Help` / `--help` behavior documented (or implemented)
-
-Parameters
-
-* [ ] `[CmdletBinding()]` used
-* [ ] Parameters typed and validated
-* [ ] Parameter sets used if ambiguity exists
-* [ ] Defaults are safe for automation (non-interactive)
-
-Environment & Dependencies
-
-* [ ] Required tools/modules listed with minimum versions (no floating versions)
-* [ ] Required env vars declared; optional env vars declared
-* [ ] DRY_RUN behavior implemented where applicable (disables side effects)
-* [ ] Preflight validation happens before any external action
-
-Execution Safety
-
-* [ ] No prompts unless `-Interactive` (and only in TTY)
-* [ ] Write/Destructive actions use `ShouldProcess` (`-WhatIf` supported)
-* [ ] Side effects explicit in name + help + output/logs
-* [ ] Idempotence considered (safe to re-run)
-
-Artifacts & Governance
-
-* [ ] Script does not create placeholder governance artifacts (`lint.yaml`, `review.yaml`, `policy.yaml`)
-* [ ] If script writes operational outputs to `artifacts/`, the output contract documents what/where/format
-
-Output & Logging
-
-* [ ] Outputs structured objects or JSON
-* [ ] No `Format-*` in core logic
-* [ ] Logging uses standard streams (`Verbose/Information/Warning/Error`)
-* [ ] Run ID/correlation ID present in logs/output
-
-Errors & Exit Codes
-
-* [ ] Inputs validated early
-* [ ] `try/catch/finally` used where external calls occur
-* [ ] Errors include actionable context
-* [ ] Non-zero exit on fatal errors (automation-safe)
-
-Ready for Lint/Review
-
-* [ ] PSScriptAnalyzer clean or issues documented with justification
-* [ ] Pester tests exist when logic is non-trivial (or explicitly waived with rationale)
-* [ ] Script is small/single-purpose; reusable parts moved to module functions
-
----
-
-### 5.1.2 Script Type Templates (Placeholders for Other Targets)
-
-This section reserves standardized creation templates for other targets and runtimes. These templates will be filled in over time. Even though multiple script types (Operational/Validation/Reporting/Orchestration) may apply to any target, each target template defines the consistent baseline structure, safety rules, and output/error contracts for that runtime.
-
-#### 5.1.2.1 Windows Script Template (Placeholder)
-
-Applies to: Windows-targeted automation not implemented in PowerShell (e.g., native tooling, vendor CLIs)
-
-Minimum requirements (to be defined):
-
-* Frontmatter standard
-* Non-interactive defaults
-* Deterministic output contract
-* Error/exit code contract
-* Logging/audit contract
-* Dependency declaration and version pinning
-* DRY_RUN / simulation strategy
-
-Checklist (placeholder)
-
-* [ ] Standardized frontmatter present and matches Mode A declarations
-* [ ] Dependencies + versions declared; preflight validates them
-* [ ] Non-interactive by default; interactive gated behind explicit flag
-* [ ] Deterministic structured output produced
-* [ ] Exit codes meaningful; failures are actionable
-* [ ] Side effects explicit; DRY_RUN/sim mode supported
-
----
-
-#### 5.1.2.2 Ubuntu Script Template (Placeholder)
-
-Applies to: bash or Linux-native operational scripting
-
-Minimum requirements (to be defined):
-
-* Frontmatter standard (header block)
-* Shell safety settings (`set -euo pipefail` pattern or equivalent)
-* Deterministic output contract (JSON preferred)
-* Dependency/version checks (command presence + version gating)
-* DRY_RUN/simulation strategy
-* Logging/audit contract
-* Exit code contract
-
-Checklist (placeholder)
-
-* [ ] Standardized frontmatter present and matches Mode A declarations
-* [ ] Safe shell options enabled (or explicitly justified if not)
-* [ ] Dependencies validated before side effects
-* [ ] Non-interactive by default; prompts gated behind explicit flag
-* [ ] Structured output produced (JSON preferred)
-* [ ] Exit codes meaningful; failures are actionable
-* [ ] DRY_RUN/sim mode supported
-
----
-
-#### 5.1.2.3 AWS Script Template (Placeholder)
-
-Applies to: scripts that interact with AWS (CLI/SDK/Terraform wrappers, etc.)
-
-Minimum requirements (to be defined):
-
-* Frontmatter standard
-* Auth context validation (profile/role/identity)
-* Region/account guardrails
-* Deterministic output contract
-* DRY_RUN strategy (where feasible)
-* Change safety (`plan` vs `apply` semantics where applicable)
-* Logging/audit contract (include account, region, resource identifiers)
-
-Checklist (placeholder)
-
-* [ ] Frontmatter includes account/region expectations and scope
-* [ ] Auth validated (whoami/identity) before any actions
-* [ ] Account/region guardrails enforced
-* [ ] Write actions gated (plan/preview + confirmation where high risk)
-* [ ] Structured output produced
-* [ ] Errors actionable; exit codes meaningful
-* [ ] DRY_RUN/sim mode supported
-
----
-
-#### 5.1.2.4 Azure Script Template (Placeholder)
-
-Applies to: scripts that interact with Azure (Az CLI/Az PowerShell/Graph/etc.)
-
-Minimum requirements (to be defined):
-
-* Frontmatter standard
-* Tenant/subscription guardrails
-* Identity validation (signed-in principal, managed identity, service principal)
-* Deterministic output contract
-* DRY_RUN strategy (where feasible)
-* Change safety (preview/confirm)
-* Logging/audit contract (tenant, subscription, resource IDs)
-
-Checklist (placeholder)
-
-* [ ] Frontmatter includes tenant/subscription expectations and scope
-* [ ] Identity validated before any actions
-* [ ] Tenant/subscription guardrails enforced
-* [ ] Write actions gated (preview/confirm for risk)
-* [ ] Structured output produced
-* [ ] Errors actionable; exit codes meaningful
-* [ ] DRY_RUN/sim mode supported
-
----
-
-#### 5.1.2.5 macOS Script Template (Placeholder)
-
-Applies to: zsh/bash scripts, vendor tools, MDM-related automation, etc.
-
-Minimum requirements (to be defined):
-
-* Frontmatter standard
-* Shell safety settings
-* Dependency/version checks
-* Deterministic output contract
-* DRY_RUN strategy
-* Logging/audit contract
-* Exit code contract
-
-Checklist (placeholder)
-
-* [ ] Standardized frontmatter present and matches Mode A declarations
-* [ ] Safe shell options enabled (or explicitly justified if not)
-* [ ] Dependencies validated before side effects
-* [ ] Non-interactive by default; prompts gated behind explicit flag
-* [ ] Structured output produced (JSON preferred)
-* [ ] Exit codes meaningful; failures are actionable
-* [ ] DRY_RUN/sim mode supported
-
----
-
-#### 5.1.2.6 SQL Script Template (Placeholder)
-
-Applies to: SQL scripts used for reporting, validation, migrations, and operational maintenance
-
-Minimum requirements (to be defined):
-
-* Frontmatter metadata (target DB, environment, scope)
-* Transaction safety rules
-* ReadOnly vs Write vs Destructive rules
-* Deterministic output contract (schema + columns defined)
-* Logging/audit strategy (execution tracking)
-* Error handling / rollback expectations
-
-Checklist (placeholder)
-
-* [ ] Frontmatter includes target DB/environment and scope classification
-* [ ] Transactions used appropriately; rollback strategy defined
-* [ ] ReadOnly/Write/Destructive behavior explicit
-* [ ] Output schema defined and consistent
-* [ ] Execution is auditable (who/when/where)
-* [ ] Failures handled predictably
-
 ---
 
 ### 5.2 Determinism & Output Rules
@@ -592,6 +458,38 @@ Scripts MUST:
 * Avoid formatted output
 * Emit timestamps explicitly
 * Clearly declare side effects
+
+---
+
+### 5.2.1 Orchestration Compatibility (MANDATORY, NEW)
+
+Orchestration modes are:
+
+* `plan` (orchestrator-only)
+* `dry-run` (orchestrator invokes scripts with `-dry-run` and/or `DRY_RUN=1`)
+* `run`
+
+Rules:
+
+* Scripts MUST remain runnable standalone.
+* Scripts MUST support script-level dry-run control (`-dry-run` and/or `DRY_RUN`) where applicable.
+* Scripts are NOT required to implement `-mode plan|dry-run|run`. `plan` remains orchestrator-only.
+
+---
+
+### 5.2.2 Artifacts & Governance Philosophy (GLOBAL RULE, NEW)
+
+Operational scripts MUST follow the repo’s artifacts philosophy:
+
+* No placeholder governance artifacts.
+* Governance outputs are generated only when governance steps run.
+* Operational scripts MUST NOT create governance artifacts.
+
+Note:
+
+* Script-produced operational outputs MAY be written into `artifacts/` only when the script’s purpose explicitly calls for it and the output contract documents it.
+
+(Combined-governance-file workstream is in progress and will be codified once filenames/paths are finalized.)
 
 ---
 
@@ -632,7 +530,7 @@ Rules:
 * Write scripts MUST:
 
   * Declare changes clearly
-  * Support DRY_RUN where feasible
+  * Support dry-run where feasible
   * Escalate to HITL if risk is high
 * Any Write action MUST be obvious from the script name and frontmatter
 
@@ -640,8 +538,8 @@ Rules:
 
 ### Proceed to Next Play
 
-➡️ **Prompt:** Run Script Lint Playbook
-➡️ Next recommended play after lint: **Script Reviewer Playbook**
+➡️ Prompt: Run Script Lint Playbook
+➡️ Next recommended play after lint: Script Reviewer Playbook
 
 ---
 
@@ -656,9 +554,9 @@ Linting MUST:
 
 Manual best practices do NOT count as linting.
 
-#### Options
+Options:
 
-1. **Automated lint with recorded output** (recommended)
+1. Automated lint with recorded output (recommended)
 2. Manual lint checklist
 3. No lint (NOT allowed)
 
@@ -678,9 +576,9 @@ Review MUST:
 
 No verdict = not approved.
 
-#### Options
+Options:
 
-1. **Independent reviewer with checklist** (recommended)
+1. Independent reviewer with checklist (recommended)
 2. Pair review
 3. Self-review (NOT allowed)
 
@@ -737,14 +635,9 @@ Compliance is mandatory.
 
 ## Recommended Next Steps (Consistent Pattern)
 
-1. **Run Script Lint Playbook** (recommended first)
-   Why: catches defects before human review
-
-2. **Run Script Reviewer Playbook**
-   Why: formal approval and risk acknowledgment
-
-3. **Proceed to Packaging or Orchestration**
-   Why: only approved scripts should be automated
+1. Run Script Lint Playbook (recommended first)
+2. Run Script Reviewer Playbook
+3. Proceed to Packaging or Orchestration
 
 ---
 
