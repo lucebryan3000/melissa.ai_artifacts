@@ -1,199 +1,281 @@
-# Script Reviewer Playbook  
-**Playbook ID:** SRP-001  
-**Name:** Script Reviewer Playbook  
-**Version:** 1.0  
-**Status:** Canonical  
-**Classification:** **Evaluative**  
-**Applies To:** All scripts submitted to `ops-script-library`  
-**Generated Using:** playbook-generator-playbook.md  
-**Primary Consumer:** Human reviewers, AI reviewers (Melissa.ai)
+# Script Reviewer Playbook
+ID: SRP-001  
+Version: 1.3  
+Status: Authoritative (Advisory / Guardrails)  
+Applies To: ops-script-library  
+Audience: Humans and AI systems (Melissa.ai)
 
 ---
 
-## 1. Playbook Role & Authority
+## 1. Purpose
 
-### 1.1 What This Playbook Governs
+This playbook defines the **recommended review process** for scripts created under the Script Creator Playbook and validated by the Script Lint Playbook.
 
-This playbook governs **how scripts are reviewed and approved** before entering the repository.
+The reviewer’s role is to:
+- Validate intent, scope, and safety
+- Surface risks and mismatches
+- Provide an explicit recommendation before reuse or automation
 
-It defines:
-- What reviewers must check
-- What constitutes approval vs rejection
-- When reviewers must block a script
-- How reviewer judgment is applied consistently
-
-If a script fails this playbook, **it must not be merged**, regardless of functionality.
+This playbook emphasizes **guardrails and visibility**, not hard blocking.
 
 ---
 
-### 1.2 Who Must Use This Playbook
+## 2. When This Playbook Runs
 
-This playbook **must** be used by:
-- Human reviewers
-- AI reviewers
-- Maintainers approving merges
+This playbook SHOULD be invoked:
 
-Skipping this playbook invalidates the review.
+- After the Script Lint Playbook completes
+- Regardless of whether lint produced warnings
+- Before packaging, orchestration, or automation
 
----
-
-### 1.3 Authority Level
-
-This playbook has **merge-blocking authority**.
-
-Reviewers:
-- Must approve or reject explicitly
-- Must not “approve with comments”
-- Must not defer required fixes
+Review is strongly recommended for **all scripts**, and especially critical for:
+- Write or Destructive scripts
+- Scripts intended for automation or CI
+- Scripts touching production systems
 
 ---
 
-## 2. Invocation Modes
+## 3. Reviewer Role & Expectations
 
-### Mode A — Initial Review (MANDATORY)
+The reviewer SHOULD:
 
-Used when a script is first submitted.
+- Be logically independent from the script author when possible
+- Review the script as if it could be run unattended
+- Focus on risk, clarity, and correctness—not style preferences
+- Assume future readers and operators are unfamiliar with the author’s intent
 
-Purpose:
-- Verify compliance with Script Creator Playbook
-- Detect high-risk issues early
+For AI reviewers:
+- Explicitly switch context from “author” to “reviewer”
+- Prefer conservative interpretations of risk
 
----
-
-### Mode B — Re-Review (MANDATORY if changes requested)
-
-Used after author revisions.
-
-Purpose:
-- Confirm issues were resolved
-- Ensure no regressions were introduced
+Self-review is discouraged but permitted when no alternative exists (must be noted).
 
 ---
 
-## 3. Reviewer Preconditions
+## 4. Reviewer Inputs (Recommended)
 
-Before reviewing, confirm:
+The reviewer SHOULD have access to:
 
-- The **Script Creator Playbook v1.0** was followed
-- The script declares:
-  - Target
-  - Primary OS
-  - Scope
-- Reviewer understands the script’s intent
+1. The final script
+2. Standardized frontmatter
+3. Lint report (including warnings and auto-fixes)
+4. Pre-creation context (intent, scope, target)
+5. Declared script type and scope
 
-If not, **stop and request clarification**.
-
----
-
-## 4. Normative Review Rules
-
-### 4.1 Completeness Rules
-
-Reviewer must confirm:
-
-- Package directory exists
-- `package.yaml` is present and valid
-- `.env.example` exists
-- Entry script exists and matches manifest
-
-Missing artifacts = automatic rejection.
+If any input is missing, the reviewer SHOULD note this as a risk.
 
 ---
 
-### 4.2 Truthfulness Rules
+## 5. Review Philosophy (Guardrails)
 
-Reviewer must validate:
+Review SHOULD be:
 
-- Primary OS matches script content
-- Compatible OS claims are honest
-- Scope classification matches behavior
-- Tool requirements are complete
+- Explicit
+- Auditable
+- Deterministic
+- Non-interactive
 
-Any mismatch = rejection.
+Review SHOULD NOT:
+- Modify code directly
+- Perform linting
+- Auto-fix issues
 
----
-
-### 4.3 Safety Rules
-
-Reviewer must verify:
-
-- `ReadOnly` scripts do not mutate state
-- `Destructive` scripts:
-  - Clearly warn
-  - Require confirmation
-- No hard-coded credentials or IDs
-- No hidden side effects
-
-Safety violations = rejection.
+Review MAY:
+- Recommend changes
+- Flag risks
+- Suggest follow-up actions
+- Recommend escalation for high-risk scripts
 
 ---
 
-### 4.4 Portability Rules
+## 6. Recommended Review Checklist (WITH GUIDANCE)
 
-Reviewer must check:
+The reviewer SHOULD walk through each section and record observations.
 
-- No OS-specific flags contradict declared OS
-- Bash scripts avoid GNU/BSD traps or document them
-- PowerShell scripts respect declared platform
+### 6.1 Identity & Intent
 
-Violations must be fixed or compatibility reduced.
+Check that:
+- Script purpose matches its Human Name
+- Script does what it claims—and only that
+- No hidden responsibilities exist
 
----
-
-## 5. Reviewer Checklist (MANDATORY)
-
-All must be true to approve:
-
-- [ ] Script matches declared target
-- [ ] Primary OS is correct
-- [ ] Scope classification is honest
-- [ ] No secrets embedded
-- [ ] `.env.example` is complete
-- [ ] Tool dependencies declared
-- [ ] Script runs without launcher
-- [ ] Failure modes are understandable
-- [ ] Destructive actions are gated
-- [ ] Documentation is sufficient
-
-If any box is unchecked → **reject**.
+**Enhancement #1:**  
+Reviewer explicitly states whether intent is *clear*, *mostly clear*, or *ambiguous*.
 
 ---
 
-## 6. Reviewer Decision Outcomes
+### 6.2 Frontmatter & Documentation
 
-Reviewer must choose **exactly one**:
+Verify that:
+- Standardized frontmatter exists
+- Script type is declared
+- Scope (ReadOnly / Write / Destructive) is declared
+- OS, runtime, and tooling are documented
+- Usage examples appear correct
+- `--help` / `-Help` renders safely
 
-- **Approve** — script may merge
-- **Reject** — script must be fixed
-
-“Approve with comments” is not allowed.
-
----
-
-## 7. What This Playbook Does NOT Do
-
-- Does not rewrite scripts
-- Does not test execution
-- Does not waive requirements
-- Does not optimize scripts
+**Enhancement #2:**  
+Reviewer flags missing or unclear documentation even if lint passed.
 
 ---
 
-## 8. AI Reviewer Behavior
+### 6.3 Scope Accuracy (READ vs WRITE)
 
-AI reviewers must:
-- Apply the same checklist
-- Cite specific violations
-- Refuse approval on failures
-- Avoid subjective opinions
+Confirm that:
+- ReadOnly scripts do not mutate external systems
+- Write scripts clearly mark where changes occur
+- Destructive scripts are explicitly labeled
 
----
-
-## 9. Versioning
-
-- This playbook is versioned
-- Reviews should note version used
-- Breaking changes require major bump
+**Enhancement #3:**  
+Reviewer explicitly notes where the script transitions from ReadOnly → Write (if applicable).
 
 ---
 
+### 6.4 Lint Findings Awareness
+
+Reviewer SHOULD:
+- Confirm lint ran
+- Review warnings
+- Decide whether warnings are acceptable given context
+
+**Enhancement #4:**  
+Reviewer records whether lint warnings are:
+- Accepted
+- Deferred
+- Recommended for remediation
+
+---
+
+### 6.5 Error Handling & Failure Modes
+
+Check for:
+- Early validation
+- Clear error messages
+- No silent failures
+- Predictable exit behavior
+
+**Enhancement #5:**  
+Reviewer explicitly states worst-case failure impact.
+
+---
+
+### 6.6 Determinism & Automation Safety
+
+Confirm that:
+- Script is non-interactive by default
+- Automation will not hang
+- Output is structured and predictable
+
+**Enhancement #6:**  
+Reviewer notes whether script is safe for:
+- Manual use
+- CI
+- Scheduled automation
+
+---
+
+### 6.7 Human-in-the-Loop (HITL) Behavior
+
+If HITL exists, verify:
+- It is opt-in
+- Prompts explain impact
+- Refusal exits safely
+
+**Enhancement #7:**  
+Reviewer explicitly notes whether HITL behavior is:
+- Required
+- Optional
+- Not applicable
+
+---
+
+### 6.8 Security & Secrets
+
+Check that:
+- Secrets are not hard-coded
+- Secrets are not logged
+- Environment variables or managed identity are used
+
+**Enhancement #8:**  
+Reviewer flags any area where secret handling *might* become risky over time.
+
+---
+
+### 6.9 Operational Risk & Blast Radius
+
+Assess:
+- Potential impact if script misbehaves
+- Whether rollback or recovery is obvious
+- Whether script should be restricted to certain environments
+
+**Enhancement #9:**  
+Reviewer classifies risk as:
+- Low
+- Medium
+- High
+
+---
+
+## 7. Reviewer Recommendation (NOT A BLOCK)
+
+Instead of a hard verdict, the reviewer MUST provide **one recommendation**:
+
+- **RECOMMENDED TO PROCEED**  
+  Script is safe and clear for intended use.
+
+- **PROCEED WITH CAUTION**  
+  Script is usable, but risks or gaps exist (must be listed).
+
+- **RECOMMEND REMEDIATION BEFORE USE**  
+  Script should be improved before automation or reuse.
+
+This recommendation is advisory but should be respected.
+
+---
+
+## 8. Review Notes & Report
+
+The review SHOULD produce a short report including:
+
+- Script name
+- Reviewer identity
+- Review timestamp
+- Lint summary reference
+- Risk classification
+- Recommendation
+- Notes and follow-ups (if any)
+
+**Enhancement #10:**  
+Reviewer explicitly states whether the script is suitable for automation.
+
+---
+
+## 9. Handoff Guidance
+
+Based on recommendation:
+
+- **Recommended to Proceed**  
+  → Packaging, orchestration, or automation is reasonable
+
+- **Proceed with Caution**  
+  → Prefer limited rollout, documentation, or manual execution
+
+- **Recommend Remediation**  
+  → Address notes before reuse or automation
+
+---
+
+## 10. Definition of Done (Review Phase)
+
+A review is considered complete when:
+
+- Reviewer has examined the script
+- Checklist areas are considered
+- Recommendation is recorded
+- Risks and notes are documented
+
+Review does not guarantee correctness—it provides **informed confidence**.
+
+---
+
+End of Playbook
