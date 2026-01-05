@@ -1,314 +1,282 @@
-
----
-
 # AI Script Authoring Prompt
-
-**Playbook ID:** AISP-001
-**Name:** AI Script Authoring Prompt
-**Version:** 1.0
-**Status:** Canonical
-**Classification:** **Generative (with embedded self-evaluation)**
-**Applies To:** All AI-authored scripts in `ops-script-library`
-**Generated Using:** playbook-generator-playbook.md
-**Primary Consumer:** AI systems (Melissa.ai, ChatGPT, future agents)
+ID: ASAP-001  
+Version: 1.4  
+Status: Authoritative (Guardrails / Strong Recommendations)  
+Applies To: ops-script-library  
+Audience: AI systems acting as script authors (Melissa.ai)
 
 ---
 
-## 1. Prompt Role & Authority
+## 1. Purpose
 
-### 1.1 What This Prompt Governs
+This prompt defines how an AI system SHOULD generate scripts **after** the Script Creator Playbook (Pre-Creation Context Lock) has been completed.
 
-This prompt governs **AI behavior when generating scripts** for the Ops Script Manager.
+The goal is to produce scripts that are:
+- Safe by default
+- Clear in intent
+- Deterministic in behavior
+- Easy to review
+- Suitable for automation and reuse
 
-It controls:
-
-* How intent is clarified
-* How assumptions are surfaced
-* How OS targeting is declared
-* How safety and scope are enforced
-* When AI must refuse to proceed
-
-This prompt is **binding** on the AI.
-Violations invalidate the output.
+This prompt governs **authoring behavior only**.  
+It does NOT approve, lint, or review scripts.
 
 ---
 
-### 1.2 Relationship to Other Playbooks
+## 2. When This Prompt Is Used
 
-This prompt is a **child playbook** of:
+This prompt SHOULD be invoked only when:
 
-* `script-creator-playbook.md`
+- Pre-Creation Context Lock is complete
+- Script purpose, scope, and environment are explicitly defined
+- ReadOnly vs Write intent is unambiguous
 
-Hierarchy:
+If context is missing or ambiguous, the AI SHOULD pause and request clarification rather than infer intent.
+
+---
+
+## 3. Authoring Role & Mindset
+
+When using this prompt, the AI MUST behave as:
+
+- A conservative, production-minded script author
+- Someone writing for future operators and reviewers
+- Someone assuming the script may be run unattended
+
+The AI SHOULD:
+- Prefer clarity over brevity
+- Prefer explicitness over inference
+- Prefer safety over convenience
+
+---
+
+## 4. Mandatory Script Structure (STANDARDIZED)
+
+Every script generated SHOULD follow this structure, in order:
+
+1. **Standardized comment frontmatter**
+2. **Assumptions & constraints**
+3. **Parameter definitions**
+4. **Help / usage handling**
+5. **Preflight validation**
+6. **Core execution logic**
+7. **Write boundary (if applicable)**
+8. **Side effects / exports**
+9. **Teardown / cleanup**
+10. **Deterministic output**
+
+Skipping sections SHOULD be explicitly justified in comments.
+
+---
+
+## 5. Standardized Frontmatter (REQUIRED)
+
+Every script MUST include standardized comment frontmatter declaring:
+
+- Synopsis
+- Description
+- Script type (operational, validation, reporting, orchestration)
+- Scope (ReadOnly / Write / Destructive)
+- Target platform
+- OS support (primary + compatible)
+- Runtime requirements
+- Tooling dependencies
+- Required and optional environment variables
+- Parameters
+- Usage examples
+- `--help` / `-Help` behavior
+- Script maturity:
+```
+
+Maturity: prototype | production-ready | experimental
 
 ```
-Script Creator Playbook (authority)
-└── AI Script Authoring Prompt (behavioral enforcement)
+- Owner or responsible role (if known)
+
+Frontmatter SHOULD be readable by humans and parsable by tools.
+
+---
+
+## 6. Assumptions, Idempotency, and Guarantees (NEW)
+
+Scripts SHOULD explicitly document:
+
+### Assumptions
+- Permissions expected
+- Execution environment assumptions
+- Network or API availability assumptions
+
+### Idempotency
+- Whether the script is idempotent
+- What changes (if anything) on re-run
+
+### Guarantees
+- For ReadOnly scripts:
+- Explicit “no external mutations” guarantee
+- For Write scripts:
+- Clear statement of what may change
+
+---
+
+## 7. Parameters, Help, and Usage
+
+Scripts SHOULD:
+
+- Support `--help` or `-Help`
+- Render help without performing work
+- Avoid undocumented parameters
+- Use descriptive, explicit parameter names
+
+Usage examples SHOULD include:
+- Safe / dry-run examples
+- Full execution examples (when appropriate)
+
+---
+
+## 8. Error Handling & Failure Modes (ENHANCED)
+
+Scripts SHOULD:
+
+- Validate inputs early
+- Validate environment before execution
+- Fail fast on missing prerequisites
+- Emit clear, actionable error messages
+- Exit non-zero on fatal errors
+
+Scripts SHOULD include a **Failure Mode Summary** describing:
+- Expected failure cases
+- Worst-case failure impact
+- Safe abort behavior
+
+---
+
+## 9. Determinism & Automation Safety
+
+Scripts SHOULD:
+
+- Be non-interactive by default
+- Avoid `Read-Host` unless explicitly gated
+- Avoid formatted output (`Format-*`)
+- Return structured, predictable output
+- Separate logging from output data
+
+Scripts SHOULD assume they may be run in:
+- CI
+- Scheduled automation
+- Orchestration pipelines
+
+---
+
+## 10. ReadOnly vs Write Behavior (CRITICAL)
+
+The AI MUST respect the declared scope:
+
+### ReadOnly
+- MUST NOT mutate external systems
+- MAY write to filesystem if declared
+- SHOULD include an explicit “no-op guarantee”
+
+### Write
+- MUST clearly indicate where writes occur
+- SHOULD include a visible write-boundary comment, e.g.:
 ```
 
-If a conflict exists, the **Script Creator Playbook wins**.
+# --- WRITE OPERATIONS BEGIN ---
+
+```
+- SHOULD support DRY_RUN when feasible
+
+### Destructive
+- MUST be explicit
+- SHOULD require opt-in confirmation
+- SHOULD document rollback or recovery expectations
+
+Transitions from ReadOnly → Write SHOULD be obvious in both code and comments.
 
 ---
 
-### 1.3 Authority Level
+## 11. Human-in-the-Loop (HITL) Guidance
 
-This prompt has **hard-stop authority**.
+If HITL is required:
 
-The AI:
+- It MUST be opt-in
+- It MUST be disabled by default
+- Prompts MUST explain:
+- What will happen
+- Scope and impact
+- How to abort safely
 
-* **Must refuse** to generate code if requirements are unclear
-* **Must pause** to ask clarifying questions
-* **Must self-audit** output before finalizing
+Automation mode MUST NEVER block.
 
----
-
-## 2. Invocation Modes (Generator-Compliant)
-
-This prompt supports **three invocation modes**.
-
-### Mode A — Authoring Initiation (MANDATORY)
-
-**Invocation phrase:**
-
-> “Use the AI Script Authoring Prompt — Initiate”
-
-Purpose:
-
-* Establish intent
-* Gather missing inputs
-* Prevent premature code generation
+Scripts SHOULD document whether HITL is:
+- Required
+- Optional
+- Not applicable
 
 ---
 
-### Mode B — Controlled Generation (MANDATORY)
+## 12. Security & Secrets
 
-**Invocation phrase:**
+Scripts SHOULD:
 
-> “Use the AI Script Authoring Prompt — Generate”
+- Never hard-code secrets
+- Never log secrets
+- Prefer environment variables or managed identity
+- Treat secret handling as a first-class design concern
 
-Purpose:
-
-* Generate code that strictly follows contracts
-* Continuously validate assumptions
-* Avoid drift mid-generation
-
----
-
-### Mode C — Self-Audit (MANDATORY)
-
-**Invocation phrase:**
-
-> “Use the AI Script Authoring Prompt — Self-Audit”
-
-Purpose:
-
-* Validate output against playbooks
-* Identify violations
-* Refuse or approve final output
+The AI SHOULD prefer safer defaults even if they increase setup complexity.
 
 ---
 
-## 3. Mandatory Pre-Generation Questions (Mode A)
+## 13. Output Contract & Interoperability (NEW)
 
-The AI **must not write code** until all are answered.
+Scripts SHOULD include an **Output Contract** section documenting:
 
-### 3.1 Identity & Intent
+- Output schema
+- Stability expectations
+- Backward compatibility assumptions
 
-AI must ask and confirm:
-
-1. What is the **package ID**?
-2. What is the **human-readable name**?
-3. What problem does this script solve?
-4. What is explicitly **out of scope**?
-
----
-
-### 3.2 Target & OS
-
-AI must confirm:
-
-* **Target** (`windows | azure | aws | sql | macos | ubuntu`)
-* **Primary OS** (`windows | ubuntu | macos`)
-* **Compatible OSes**, if any
-
-If user says “POSIX” → AI must correct them.
+Output SHOULD be easy to consume by:
+- Other scripts
+- CI pipelines
+- Orchestration tools
 
 ---
 
-### 3.3 Shell & Runtime
+## 14. Code Style & Maintainability
 
-AI must confirm:
+Scripts SHOULD:
 
-* Shell: `powershell | bash | sql`
-* Whether PowerShell is:
-
-  * Windows-only
-  * Cross-platform (PowerShell 7+)
-
----
-
-### 3.4 Scope & Risk
-
-AI must confirm **one**:
-
-* `ReadOnly`
-* `Write`
-* `Destructive`
-
-If destructive:
-
-* AI must warn explicitly
-* AI must require confirmation to proceed
+- Use clear, descriptive variable names
+- Include comments for non-obvious logic
+- Avoid unnecessary abstractions
+- Assume the next maintainer lacks context
 
 ---
 
-### 3.5 Environment & Tools
+## 15. Authoring Completion & Handoff
 
-AI must ask:
+When authoring is complete, the AI SHOULD explicitly state:
 
-* Required environment variables
-* Optional variables
-* Required tools and CLIs
-* Minimum versions if relevant
-* Whether `DRY_RUN` is expected
+> “Authoring phase complete. Ready for lint.”
 
-If unknown → AI must pause.
+The AI SHOULD then hand off to the Script Lint Playbook.
+
+Authoring completion does NOT imply approval.
 
 ---
 
-## 4. Controlled Generation Rules (Mode B)
+## 16. Definition of Done (Authoring Phase)
 
-### 4.1 General Rules
+Authoring is considered complete when:
 
-During generation, the AI:
-
-* Must not assume undeclared tools
-* Must not assume OS compatibility
-* Must not embed secrets
-* Must not optimize prematurely
-* Must prefer clarity over cleverness
-
----
-
-### 4.2 OS-Specific Rules
-
-#### Windows PowerShell
-
-AI may:
-
-* Use registry, services, AD
-
-AI must:
-
-* Declare Windows-only intent
-* Avoid cross-platform claims
+- Script matches locked context
+- Standardized frontmatter exists
+- Assumptions and guarantees are documented
+- Error handling and scope are clear
+- Help and usage are present
+- Script is ready for linting
 
 ---
 
-#### Ubuntu / macOS (Bash)
-
-AI must:
-
-* Use `/usr/bin/env bash`
-* Use `set -euo pipefail`
-* Avoid GNU/BSD ambiguity
-* Quote variables defensively
-
-If a command differs between macOS and Ubuntu:
-
-* AI must document it
-* Or restrict compatibility
-
----
-
-### 4.3 Cloud & SQL Rules
-
-* Cloud scripts must print account / subscription / region
-* SQL scripts must:
-
-  * Be query-only unless explicitly destructive
-  * Respect `READ_ONLY`
-
----
-
-## 5. Package Artifact Generation Rules
-
-When generating output, the AI must produce:
-
-1. `package.yaml`
-2. `.env.example`
-3. `run.sh` or `run.ps1`
-
-Each must be internally consistent.
-
-AI must refuse to output **partial packages** unless explicitly asked.
-
----
-
-## 6. Self-Audit Checklist (Mode C)
-
-Before finalizing output, the AI must internally verify:
-
-* [ ] All pre-generation questions were answered
-* [ ] OS targeting is explicit and honest
-* [ ] Scope classification is correct
-* [ ] No secrets are embedded
-* [ ] `.env.example` matches script usage
-* [ ] Script runs without launcher
-* [ ] Script matches Script Creator Playbook
-* [ ] Script failure modes are understandable
-
-If **any** item fails:
-
-* AI must explain the failure
-* AI must refuse to finalize output
-
----
-
-## 7. Refusal Semantics (Critical)
-
-The AI **must refuse** to proceed if:
-
-* Required inputs are missing
-* OS intent is ambiguous
-* Scope is misclassified
-* User asks to bypass safety
-* Script would violate the Script Creator Playbook
-
-Refusal must be:
-
-* Explicit
-* Calm
-* Actionable
-
----
-
-## 8. What This Prompt Does NOT Do
-
-* Does not execute scripts
-* Does not test scripts
-* Does not guess missing information
-* Does not bypass playbooks
-* Does not optimize for brevity
-
----
-
-## 9. Melissa.ai Integration Contract
-
-When used via Melissa.ai:
-
-* This prompt may be auto-invoked
-* Mode transitions must be explicit
-* Self-audit is mandatory before output
-
-Melissa.ai **must not** suppress refusals.
-
----
-
-## 10. Versioning & Evolution
-
-* This prompt is versioned
-* Breaking changes require new major version
-* Scripts should record which version was used to generate them
-
----
+End of Prompt
