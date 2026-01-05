@@ -1,418 +1,402 @@
 # Script Creator Playbook
-
-**Playbook ID:** SCP-001
-**Name:** Script Creator Playbook
-**Version:** 1.0
-**Status:** Canonical
-**Classification:** **Hybrid (Generative + Evaluative)**
-**Applies To:** `ops-script-library`
-**Generated Using:** playbook-generator-playbook.md
-**Primary Consumer:** Humans and AI systems (Melissa.ai)
+ID: SCP-001  
+Version: 1.3  
+Status: Authoritative  
+Applies To: ops-script-library  
+Audience: Humans and AI systems (Melissa.ai)
 
 ---
 
-## 1. Playbook Role & Authority
+## 1. Purpose
 
-### 1.1 What This Playbook Governs
+This playbook defines the mandatory process for creating operational scripts that are:
 
-This playbook defines **how scripts are created, structured, validated, and approved** for inclusion in the Ops Script Manager repository.
+- Safe to automate
+- Deterministic
+- Auditable
+- Human-reviewable
+- Compatible with AI-assisted execution
+- Suitable for shared internal libraries
 
-It governs:
-
-* Script intent definition
-* OS targeting and compatibility
-* Safety classification
-* Frontmatter / manifest requirements
-* Authoring constraints
-* Validation and approval criteria
-
-If a script conflicts with this playbook, **the script is invalid**, regardless of whether it “works.”
+Any script that does not fully comply with this playbook MUST NOT be published, automated, or reused.
 
 ---
 
-### 1.2 Who Must Use This Playbook
+## 2. Core Principles (Non-Negotiable)
 
-This playbook **must** be used by:
+All scripts MUST:
 
-* Any human author creating scripts for the repo
-* Any AI system (including Melissa.ai / ChatGPT) generating scripts
-* Any reviewer approving scripts for merge
+1. Be single-purpose
+2. Be non-interactive by default
+3. Fail fast with actionable errors
+4. Produce deterministic output
+5. Declare scope honestly (ReadOnly vs Write)
+6. Separate authoring, linting, and review
+7. Be safe for CI and unattended execution
+8. Make side effects explicit
+9. Support human-in-the-loop (HITL) when appropriate
+10. Prefer clarity over cleverness
 
-Use is **mandatory**, not advisory.
-
----
-
-### 1.3 Authority Level
-
-This playbook has **normative authority**.
-
-* It may **block creation**
-* It may **invalidate scripts**
-* It may **require regeneration**
-* It may **refuse output** if constraints are violated
+Violation of any principle is a defect.
 
 ---
 
-## 2. Invocation Modes (Required by Generator Framework)
+## 3. Lifecycle Overview
 
-This playbook is invoked in **three explicit modes**.
+Scripts progress through explicit, gated plays:
 
-### Mode A — Pre-Creation (Generative, Mandatory)
+Mode A → Mode B → Mode C → Mode D  
+Pre-Creation → Creation → Lint → Review
 
-**Invocation phrase (AI):**
+Optional post-approval plays:
+- Packaging
+- Orchestration
+- AI augmentation
 
-> “Use the Script Creator Playbook — Pre-Creation”
-
-Purpose:
-
-* Lock intent
-* Lock OS assumptions
-* Lock safety scope
-* Prevent rework
-
-**No code may be written before this mode completes.**
+No play may be skipped.
 
 ---
 
-### Mode B — In-Flight Validation (Evaluative, Optional but Recommended)
+## 4. Mode A — Pre-Creation Context Lock (MANDATORY)
 
-**Invocation phrase (AI):**
+### 4.1 Script Identity
 
-> “Validate against the Script Creator Playbook — In-Flight”
+Every script MUST define:
 
-Purpose:
+- **Package ID**  
+  Format: `domain.script-name` (kebab-case, immutable)
 
-* Detect drift
-* Catch portability and safety violations early
-* Correct patterns before they harden
+- **Human Name**  
+  Imperative verb phrase describing exactly what the script does
 
----
-
-### Mode C — Final Health Check (Evaluative, Mandatory)
-
-**Invocation phrase (AI):**
-
-> “Run Script Creator Playbook — Final Health Check”
-
-Purpose:
-
-* Certify readiness
-* Approve or reject the script
-* Decide whether the script may enter the repo
-
----
-
-## 3. Normative Rules (Non-Negotiable)
-
-### 3.1 Package-First Rule
-
-Every script **must** be delivered as a **package**, not a loose file.
-
-A package is:
-
-* A directory
-* With a manifest
-* With a single entrypoint
-* With an explicit env contract
-
----
-
-### 3.2 Explicit OS Rule
-
-Scripts **must** declare the OS they were written for.
-
-Allowed OS values:
-
-* `windows`
-* `ubuntu`
-* `macos`
-
-There is **no “POSIX”** classification in authoring language.
-
----
-
-### 3.3 Truthful Compatibility Rule
-
-If a script:
-
-* Has not been tested on an OS
-* Uses OS-specific flags or tools
-
-Then that OS **must not** be declared as primary.
-
-Compatibility lists mean:
-
-> “Likely works, user assumes risk.”
-
----
-
-### 3.4 Launcher Independence Rule
-
-Scripts **must run without the launcher**.
-
-The launcher:
-
-* Orchestrates
-* Does not provide logic
-* Does not fix broken scripts
-
----
-
-## 4. Pre-Creation Context Lock (Mode A)
-
-All items below **must be answered before code is written**.
-
-### 4.1 Identity
-
-* **Package ID**
-  Format: `<target>.<short-name>`
-  Example: `azure.list-vms`
-
-* **Human Name**
-  Clear, imperative
-  Example: `List Azure Virtual Machines`
-
----
-
-### 4.2 Target Declaration
-
-Choose **exactly one** target:
-
-* `windows`
-* `azure`
-* `aws`
-* `sql`
-* `macos`
-* `ubuntu`
-
----
-
-### 4.3 OS Declaration
-
-```yaml
-os:
-  primary: ubuntu | macos | windows
-  compatible:
-    - optional
+Example:
 ```
 
-Primary OS = written and tested for.
-Compatible OSes = user may attempt at own risk.
+Package ID: azure.pull-graph-data
+Human Name: Pull Microsoft Graph data from Azure AD
+
+````
+
+#### Options
+1. **Single, narrowly scoped script** (recommended)  
+   _Reason: Easier to review, lint, automate, and reason about_
+2. Multi-purpose script
+3. Script that delegates to other scripts
+
+---
+
+### 4.2 Script Type & Scope Declaration (NEW)
+
+Every script MUST declare:
+
+- Script type:
+  - Operational
+  - Validation
+  - Reporting
+  - Orchestration
+- Scope classification:
+  - ReadOnly
+  - Write
+  - Destructive
+
+Rules:
+- Scope MUST be accurate
+- Transitioning from ReadOnly → Write requires a **new script**
+- Destructive scripts require explicit human confirmation
+
+#### Options
+1. **ReadOnly script** (recommended)  
+   _Reason: Safest default, easiest to automate_
+2. Write script with safeguards
+3. Destructive script with mandatory HITL
+
+---
+
+### 4.3 Target & OS Declaration
+
+Choose exactly one target:
+- azure
+- aws
+- windows
+- macos
+- ubuntu
+- sql
+
+Declare OS support:
+```yaml
+os:
+  primary: windows | macos | ubuntu
+  compatible:
+    - optional
+````
+
+#### Options
+
+1. **Single primary OS, optional compatible OS** (recommended)
+2. Multi-OS primary support
+3. OS-agnostic (rare, must justify)
 
 ---
 
 ### 4.4 Shell & Runtime
 
-Choose **exactly one**:
+Choose exactly one:
 
-* `powershell`
-* `bash`
-* `sql` (queries only)
+* powershell
+* bash
+* sql
 
-Windows PowerShell is **Windows-only**.
-Bash and cross-platform PowerShell must assume Unix semantics.
+Declare minimum runtime version.
 
----
+#### Options
 
-### 4.5 Scope Classification
-
-Choose **one and only one**:
-
-* `ReadOnly`
-* `Write`
-* `Destructive`
-
-Misclassification is a defect.
+1. **Modern, supported runtime** (recommended)
+2. Legacy runtime (discouraged)
+3. Multiple runtimes (requires justification)
 
 ---
 
-### 4.6 Tooling Contract
+### 4.5 Tooling Contract
 
-Explicitly list:
+Declare:
 
 * Required tools
-* Minimum versions (if relevant)
+* Minimum versions
 
-If it’s not declared, it cannot be assumed.
+Rules:
+
+* No deprecated modules
+* No floating versions
+* Fail fast if unmet
+
+#### Options
+
+1. **Minimal, explicit tooling** (recommended)
+2. Broad tooling set
+3. Tool detection at runtime
 
 ---
 
-### 4.7 Environment Contract
+### 4.6 Environment Contract
 
-Define:
+Declare:
 
-* Required env vars
-* Optional env vars
-* Whether `DRY_RUN` is supported
+* Required environment variables
+* Optional environment variables
+* DRY_RUN support
+
+Rules:
+
+* Secrets via environment variables or managed identity only
+* No prompting for secrets
+* DRY_RUN disables all external side effects
+
+#### Options
+
+1. **Env vars + DRY_RUN supported** (recommended)
+2. Env vars only
+3. Managed identity only
 
 ---
 
-## 5. Required Package Artifacts
+### Proceed to Next Play
 
-### 5.1 Mandatory Files
+➡️ **Prompt:** Run Script Creation (Mode B)
+➡️ Next recommended play after completion: **Script Lint Playbook**
 
+---
+
+## 5. Mode B — Script Creation
+
+### 5.1 Standardized Frontmatter (MANDATORY, NEW)
+
+Every script MUST include standardized frontmatter, regardless of type:
+
+Frontmatter MUST declare:
+
+* Synopsis
+* Description
+* Script type
+* Scope (ReadOnly / Write / Destructive)
+* Target platform
+* OS support
+* Runtime requirements
+* Parameters
+* Environment variables
+* Usage examples
+* `--help` / `-Help` behavior
+
+This is REQUIRED for **all scripts**, not optional.
+
+---
+
+### 5.2 Determinism & Output Rules
+
+Scripts MUST:
+
+* Avoid interactive prompts by default
+* Return structured data (objects, JSON)
+* Avoid formatted output
+* Emit timestamps explicitly
+* Clearly declare side effects
+
+---
+
+### 5.3 Error Handling (ENHANCED)
+
+Scripts MUST:
+
+* Validate inputs early
+* Validate environment before execution
+* Fail fast with clear messages
+* Exit non-zero on fatal errors
+* Never silently continue
+
+---
+
+### 5.4 Human-in-the-Loop (HITL) Rules (ENHANCED)
+
+Scripts MAY prompt ONLY IF:
+
+* An explicit `-Confirm` or `-Interactive` flag is passed
+* Execution context is interactive (TTY detected)
+* Automation mode never blocks
+
+Required HITL pattern:
+
+1. Describe intended action
+2. Display scope and impact
+3. Require explicit confirmation
+4. Abort safely on denial or timeout
+
+---
+
+### 5.5 ReadOnly vs Write Guardrails (NEW)
+
+Rules:
+
+* ReadOnly scripts MUST NOT mutate external systems
+* Write scripts MUST:
+
+  * Declare changes clearly
+  * Support DRY_RUN where feasible
+  * Escalate to HITL if risk is high
+* Any Write action MUST be obvious from the script name and frontmatter
+
+---
+
+### Proceed to Next Play
+
+➡️ **Prompt:** Run Script Lint Playbook
+➡️ Next recommended play after lint: **Script Reviewer Playbook**
+
+---
+
+## 6. Mode C — Script Lint (REQUIRED)
+
+Linting MUST:
+
+* Be explicitly executed
+* Follow Script Lint Playbook
+* Produce PASS / WARN / FAIL
+* Record findings and remediation
+
+Manual best practices do NOT count as linting.
+
+#### Options
+
+1. **Automated lint with recorded output** (recommended)
+2. Manual lint checklist
+3. No lint (NOT allowed)
+
+---
+
+## 7. Mode D — Script Review (REQUIRED)
+
+Review MUST:
+
+* Be performed by a different role than author
+* Follow Script Reviewer Playbook
+* Produce one verdict:
+
+  * APPROVED
+  * APPROVED WITH NOTES
+  * REJECTED
+
+No verdict = not approved.
+
+#### Options
+
+1. **Independent reviewer with checklist** (recommended)
+2. Pair review
+3. Self-review (NOT allowed)
+
+---
+
+## 8. AI Compatibility (Clarified)
+
+Scripts MAY include Melissa execution markers, but they are OPTIONAL.
+
+Markers:
+
+* Are comments only
+* Must not affect runtime
+* Enable pause, resume, and policy enforcement
+
+Scripts are NOT required to include markers to be compliant.
+
+---
+
+## 9. Definition of Done (ENHANCED)
+
+A script is DONE only when:
+
+* Pre-creation context is locked
+* Script is created with standardized frontmatter
+* Script passes lint
+* Script is reviewed
+* Verdict is recorded
+* HITL behavior is documented
+* Scope classification is accurate
+
+Anything less is WORK IN PROGRESS.
+
+---
+
+## 10. Enforcement
+
+Non-compliant scripts:
+
+* MUST NOT be merged
+* MUST NOT be automated
+* MUST NOT be published
+
+This playbook exists to prevent:
+
+* Hero scripts
+* Silent failures
+* Unsafe automation
+* Unreviewed operational risk
+
+Compliance is mandatory.
+
+---
+
+## Recommended Next Steps (Consistent Pattern)
+
+1. **Run Script Lint Playbook** (recommended first)
+   *Why: catches defects before human review*
+
+2. **Run Script Reviewer Playbook**
+   *Why: formal approval and risk acknowledgment*
+
+3. **Proceed to Packaging or Orchestration**
+   *Why: only approved scripts should be automated*
+
+---
+
+End of Playbook
+
+
+Say which one.
 ```
-<package>/
-├── run.sh | run.ps1
-├── package.yaml
-└── .env.example
-```
-
-Missing files = invalid package.
-
----
-
-### 5.2 `package.yaml` — Required Fields
-
-```yaml
-schemaVersion: 1
-id: azure.list-vms
-name: List Azure VMs
-target: azure
-
-os:
-  primary: ubuntu
-  compatible:
-    - macos
-
-entry:
-  type: bash
-  file: run.sh
-
-scope: ReadOnly
-owner: ops
-```
-
----
-
-### 5.3 `.env.example` Rules
-
-* No secrets
-* No real IDs
-* Comments explain intent
-* Defaults only if safe
-
----
-
-## 6. Authoring Constraints (Mode B)
-
-### 6.1 Bash Scripts (Ubuntu / macOS)
-
-**Must:**
-
-* Use `#!/usr/bin/env bash`
-* Use `set -euo pipefail`
-* Quote variables
-* Fail fast
-
-**Must Not:**
-
-* Assume GNU vs BSD parity
-* Use OS-specific paths silently
-* Write outside working directory
-
----
-
-### 6.2 Cross-Platform PowerShell
-
-**Must:**
-
-* Target PowerShell 7+
-* Avoid registry, COM, Win32
-* Assume case-sensitive FS
-
----
-
-### 6.3 Windows PowerShell
-
-**May:**
-
-* Use registry, services, AD, WMI
-
-**Must:**
-
-* Declare Windows-only intent
-* Never assume WSL
-
----
-
-## 7. Safety & Observability Rules
-
-### 7.1 Safety
-
-* `ReadOnly` must not mutate state
-* `Destructive` must:
-
-  * Echo intent
-  * Require confirmation
-* Cloud scripts must print account / region
-* SQL scripts must respect `READ_ONLY`
-
----
-
-### 7.2 Observability
-
-Scripts must:
-
-* Print start/end markers
-* Exit with meaningful codes
-* Respect `DRY_RUN`
-* Not suppress errors
-
----
-
-## 8. Final Health Checklist (Mode C)
-
-All must be true:
-
-* [ ] Package ID is stable and unique
-* [ ] `package.yaml` validates
-* [ ] `.env.example` is complete
-* [ ] Primary OS is correct
-* [ ] Script tested on primary OS
-* [ ] Scope is honest
-* [ ] No secrets embedded
-* [ ] OS assumptions documented
-* [ ] Script runs without launcher
-* [ ] Failure modes are understandable
-
-If any item fails → **reject script**.
-
----
-
-## 9. Failure & Refusal Semantics
-
-* AI systems **must refuse** to generate scripts that violate this playbook
-* Reviewers **must block** merge on violations
-* Launcher behavior is irrelevant to compliance
-
----
-
-## 10. What This Playbook Does NOT Do
-
-* Does not execute scripts
-* Does not install tools
-* Does not manage secrets
-* Does not enforce runtime behavior
-* Does not replace human judgment
-
----
-
-## 11. Melissa.ai Integration Contract
-
-Melissa.ai may:
-
-* Invoke this playbook in any mode
-* Refuse output when violated
-* Require explicit confirmation before proceeding
-
-Melissa.ai **must not** bypass this playbook.
-
----
-
-## 12. Versioning & Evolution
-
-* This playbook is versioned
-* Breaking changes require a new major version
-* Scripts should note the playbook version used
-
