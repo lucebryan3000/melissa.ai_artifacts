@@ -1,181 +1,173 @@
+Located at: https://raw.githubusercontent.com/lucebryan3000/melissa.ai_artifacts/refs/heads/main/README.md
+# melissa.ai_artifacts
 
-# Melissa.ai Artifacts
+This repository contains **canonical agent contracts, playbooks, and artifact standards** used to operate AI-assisted development in a **deterministic, governed, high-iteration environment**.
 
-> Supporting documentation for **Melissa.ai Spec Whisperer** — the orchestrator that coaxes clarity out of chaos.
+This is **not a prompt library**.
+This is an **operating system for AI-augmented work**.
 
----
-
-## ⚠️ First-Contact Instruction (Read This First)
-
-**As soon as this file is read by a human or an AI system, it MUST prompt:**
-
-> **“Would you like to run Melissa.ai or another playbook?”**
-
-This repo is not passive documentation.  
-It is an **entry point into an interactive orchestration flow**.
-
-- **Melissa.ai** is the default starting mode for idea discovery, spec refinement, and decision locking.
-- **Playbooks** are selected intentionally when deeper guidance is needed for a specific artifact or operation.
-
-If no explicit choice is made, **assume Melissa.ai Spec Whisperer** and begin immediately.
+If you are starting a new ChatGPT / Claude / Codex session, this README is the **correct entrypoint**.
 
 ---
 
-## What Is This?
+## 🧭 How to Use This Repo (Decision Map)
 
-This repo contains playbooks, question banks, and templates that extend Melissa's capabilities. Melissa is a spec discovery and refinement protocol for AI-assisted peer coding. She asks targeted questions, locks in decisions, and helps produce high-quality artifacts.
+If you are trying to…
 
-**Core prompt:** [`melissa-ai-spec-whisperer.md`](melissa-ai-spec-whisperer.md)
+### Define intent, scope, or decisions
+→ Start with **`melissa-ai-spec-whisperer.md`**
 
----
-
-## Quick Start
-
-### Option 1: Run Melissa.ai (Default)
-Copy the contents of `melissa-ai-spec-whisperer.md` into your AI assistant (Claude, ChatGPT, Claude Code, Codex CLI). Paste your idea, draft, or spec.
-
-Melissa begins immediately by asking **Question 1**. No setup. No preamble.
-
-### Option 2: Run a Specific Playbook
-If you already know the artifact or operation you want to work on, Melissa (or you) may fetch a playbook directly:
-
-[https://raw.githubusercontent.com/lucebryan3000/melissa.ai_artifacts/main/](https://raw.githubusercontent.com/lucebryan3000/melissa.ai_artifacts/main/)
-
-## Artifact Index
+Melissa is the **spec and intent authority**.
+She asks one question at a time, locks decisions, and produces canonical artifacts.
 
 ---
 
-## Artifact Index
+### Execute work quickly and reduce friction
+→ Use **`hal9000.md`**
 
-### Artifact Playbooks
-Detailed guidance for each **canonical artifact type**. Includes mental models, evaluation dimensions, question banks, and invariants.
-
-| Playbook | Specialist Role | Status |
-|----------|-----------------|--------|
-| [`prd-playbook.md`](prd-playbook.md) | Product Thinker | ✅ Ready |
-| [`frd-playbook.md`](frd-playbook.md) | Requirements Analyst | ✅ Ready |
-| [`architecture-playbook.md`](architecture-playbook.md) | Systems Architect | ✅ Ready |
-| [`techspec-playbook.md`](techspec-playbook.md) | Solutions Architect | ✅ Ready |
-| [`implementation-playbook.md`](implementation-playbook.md) | Delivery Planner | ✅ Ready |
-| [`migration-playbook.md`](migration-playbook.md) | Risk Analyst | ✅ Ready |
-| [`api-playbook.md`](api-playbook.md) | Integration Specialist | ✅ Ready |
-| [`erd-playbook.md`](erd-playbook.md) | Data Modeler | ✅ Ready |
-| [`mermaid-guide.md`](mermaid-guide.md) | Visual Clarity Reviewer | ✅ Ready |
-| [`prompt-playbook.md`](prompt-playbook.md) | Prompt Engineer | ✅ Ready |
-| [`adr-template.md`](adr-template.md) | Decision Analyst | ✅ Ready |
-| [`dependency-manager-playbook.md`](dependency-manager-playbook.md) | Dependency Manager | ✅ Ready |
+HAL9000 is the **execution clarity agent**.
+He groups work, enforces terminal visibility, and maximizes iteration density.
 
 ---
 
-### Operational & System Playbooks
-Playbooks that govern **how artifacts are generated, validated, queued, and operationalized**, rather than the artifacts themselves.
+### Touch files, run commands, or change code
+→ Delegate to **`rosie-x.md`**
 
-| Playbook | Primary Role | Purpose |
-|---------|--------------|---------|
-| [`harvest-playbook.md`](playbooks/harvest-playbook.md) | Knowledge Harvester | Capture raw inputs (notes, transcripts, docs) for canonicalization. |
-| [`kbgen-queue-playbook.md`](playbooks/kbgen-queue-playbook.md) | Orchestrator | Manage KBGEN batching, prioritization, retries, and queue health. |
-| [`kbgen-validate-playbook.md`](playbooks/kbgen-validate-playbook.md) | Quality Gatekeeper | Enforce validation passes, scoring thresholds, and publish readiness. |
-| [`lean-skill-playbook.md`](playbooks/lean-skill-playbook.md) | Skill Designer | Define lightweight, composable Claude skills with clear ROI. |
-| [`playbook-generator-playbook.md`](playbooks/playbook-generator-playbook.md) | Meta-Orchestrator | Generate new playbooks from validated patterns. |
-| [`claude-slash-command.md`](claude-slash-command.md) | Tooling Architect | Define `/command` interfaces and execution behavior for Claude. |
-| [`melissa-ai-spec-whisperer.md`](melissa-ai-spec-whisperer.md) | Spec Orchestrator | Core protocol for decision discovery, locking, and artifact readiness. |
+Rosie-x is the **authoritative execution agent**.
+She inspects, modifies, verifies, and proves outcomes in the terminal.
+Conversation is not progress. Evidence is.
 
 ---
 
-### Templates
-Structural skeletons for artifact production. Coming soon.
+### Understand the human authority model
+→ Read **`bryan-developer-profile.md`**
 
-### Question Banks
-Extended question sets for deep-dives. Coming soon.
+This document defines:
+- non-negotiable invariants
+- stop conditions
+- promotion rules
+- risk posture
+- override semantics
 
----
-
-## How Melissa Uses This Repo
-
-1. **Standalone mode:**  
-   Melissa works without fetching anything. The core prompt embeds evaluation dimensions for all artifact types.
-
-2. **Deep-dive mode:**  
-   When going deep on a specialist domain, Melissa fetches the relevant playbook:
-```
-
-[https://raw.githubusercontent.com/lucebryan3000/melissa.ai_artifacts/main/prompt-playbook.md](https://raw.githubusercontent.com/lucebryan3000/melissa.ai_artifacts/main/prompt-playbook.md)
-
-```
-
-3. **Artifact production:**  
-When you request an artifact, Melissa uses playbooks and templates to enforce structural and semantic consistency.
+All agents must adapt to it.
 
 ---
 
-## Playbook Structure
+## 🧠 Agent Authority Model (Canonical)
 
-All playbooks follow a consistent structure (established by the Dependency Manager Playbook):
+**Authority flows as follows:**
 
-```
+Bryan
+↓
+Melissa (spec, intent, scope)
+↓
+HAL9000 (execution clarity)
+↓
+Rosie-x / Rosie-c (code & filesystem mutation)
 
-# [Artifact] Playbook
-
-> **Purpose**: [One-line description]
-> **Version**: X.X
-> **Last Updated**: YYYY-MM-DD
-
----
-
-## Mental Model
-
-[Conceptual framing]
-
-## Inputs / Outputs
-
-[What goes in, what comes out]
-
-## Evaluation Dimensions
-
-[Quality criteria with probing questions]
-
-## Question Bank
-
-[Extended questions organized by dimension]
-
-## Common Pitfalls
-
-[Anti-patterns to catch]
-
-## Template
-
-[Structural skeleton]
-
-## Invariants
-
-[Hard rules]
-
-## Examples
-
-[Good / bad examples]
-
-```
+- Only **one agent is authoritative per concern**
+- Parallel operation is allowed **only with clear authority boundaries**
+- Conflicts resolve **up the chain**, not by consensus
 
 ---
 
-## Contributing
+## 📚 Repository Structure (What Each Area Is For)
 
-This is primarily Bryan's workspace. Artifacts evolve through real usage with Melissa.
-
-If you're Bryan:
-
-1. Use Melissa to refine ideas  
-2. Lock decisions through Q&A rounds  
-3. Produce artifacts  
-4. Add them here  
-5. Iterate
+### `/docs`
+Supporting documentation and standards.
+Not authoritative unless explicitly referenced by a playbook or agent contract.
 
 ---
 
-## Version History
+### `/playbooks`  ← **PROCESS LAW**
+Procedural, step-by-step execution standards.
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.1 | 2025-01-05 | Added operational & system playbooks; expanded artifact index |
-| 1.0 | 2024-12-31 | Complete repo: README, core prompt, 11 artifact playbooks |
-| 0.1 | 2024-12-31 | Initial repo: README, core prompt, first 3 playbooks |
+Examples:
+- Script lifecycle: `script-creator`, `script-reviewer`, `script-lint`
+- KBGEN lifecycle: `harvest`, `kbgen-queue`, `kbgen-validate`
+- Meta tooling: `playbook-generator`, `lean-skill`
+
+> **Rule:** Playbooks define *how work is done*.  
+> Deviations must be explicit and intentional.
+
+---
+
+### `/prompt`  ← **INPUT MATERIAL**
+Prompt scaffolding and helper inputs.
+
+> **Important:** Prompts are **not authoritative**.  
+> They never override playbooks, agent contracts, or Bryan’s profile.
+
+---
+
+### Root-level files (Artifact Standards & Contracts)
+
+These define **what “good” looks like**:
+
+- `adr-template.md`
+- `prg-playbook.md`, `frd-playbook.md`, `techspec-playbook.md`
+- `architecture-playbook.md`
+- `api-playbook.md`
+- `mermaid-guide.md`
+- `migration-playbook.md`
+
+These are **canonical shapes**, not examples.
+
+---
+
+## 🧪 Trust Gate (Promotion Boundary)
+
+**`rubric-judge.md`** defines the **Trust Gate**.
+
+Trust Gate scores decide whether an artifact is safe to treat as **build input**.
+
+### Default posture:
+- **Ready / Solid** → safe to build from
+- **Needs Work** → publishable, not authoritative
+- **Not Usable** → do not build from
+
+Trust Gate **does not block**.
+It protects downstream systems from confident wrong builds.
+
+---
+
+## 🧩 What This Repo Is Optimized For
+
+- Preventing parallel or duplicate builds
+- Maintaining shared truth across humans and AI
+- High iteration density **without drift**
+- Deterministic, auditable outcomes
+- Treating knowledge as **code**, not conversation
+
+---
+
+## 🚫 What This Repo Is Not
+
+- A generic AI prompt collection
+- A chat memory substitute
+- A wiki
+- A place for speculative or undocumented behavior
+
+If something is important, it becomes an **artifact**.
+
+---
+
+## 🟢 How to Start a New Session (Recommended)
+
+When starting a new AI session:
+
+1. Reference this repo’s **README**
+2. Declare which agent(s) you are invoking:
+   - Melissa for decisions
+   - HAL9000 for execution
+   - Rosie-x for changes
+3. State the target artifact (PRD, script, spec, etc.)
+4. Proceed under the defined authority model
+
+---
+
+## Final Rule
+
+> **If it isn’t written, validated, and versioned — it isn’t real.**
+
+This repository exists to make that rule practical at speed.
