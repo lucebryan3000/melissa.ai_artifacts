@@ -2,6 +2,7 @@
 
 > **Purpose**: Guide the decomposition of product intent into verifiable functional behaviors that can be implemented and tested
 > **Version**: 1.0
+> **Status**: Authoritative
 > **Last Updated**: 2024-12-31
 
 ---

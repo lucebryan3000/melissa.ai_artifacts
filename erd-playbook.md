@@ -2,6 +2,7 @@
 
 > **Purpose**: Guide the creation of entity-relationship diagrams that accurately model domain data, relationships, and constraints
 > **Version**: 1.0
+> **Status**: Authoritative
 > **Last Updated**: 2024-12-31
 
 ---

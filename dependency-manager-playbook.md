@@ -2,6 +2,7 @@
 
 > **Purpose**: Manage NPM packages, Node.js runtime, Docker images, and external service dependencies with risk-aware validation workflows
 > **Version**: 1.2
+> **Status**: Authoritative
 > **Last Updated**: 2025-12-30
 
 ---

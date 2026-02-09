@@ -2,6 +2,7 @@
 
 > **Purpose**: Guide the creation of PRDs that clearly define the problem, users, and success criteria—aligning stakeholders on what to build and why
 > **Version**: 1.0
+> **Status**: Authoritative
 > **Last Updated**: 2024-12-31
 
 ---
