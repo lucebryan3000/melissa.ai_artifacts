@@ -357,9 +357,105 @@ Follow semantic versioning:
 
 This procedure can be executed autonomously by AI agents to apply frontmatter standards to existing files.
 
-### Step-by-Step Application
+### Two Approaches: Bash-Optimized (Recommended) vs Pure LLM
 
-**Input**: List of files to update (e.g., `prd-playbook.md`, `frd-playbook.md`)
+**Trade-off**: Bash handles mechanical operations (fast, no tokens), LLM handles intelligent fields (tag inference, purpose refinement).
+
+---
+
+### Approach 1: Bash-Optimized Workflow (RECOMMENDED)
+
+**Script**: `_build/drafts/frontmatter-inject.sh`
+
+**Division of Labor**:
+- **Bash (Mechanical)**: File detection, metadata extraction, YAML structure, validation
+- **LLM (Intelligent)**: Tag inference, purpose refinement, content analysis
+
+**Process**:
+
+1. **Batch extract metadata** (Bash - fast, no tokens):
+   ```bash
+   bash _build/drafts/frontmatter-inject.sh batch-extract *.md
+   ```
+   Output: JSON with file, type, purpose, version, status
+
+2. **LLM analyzes batch output**:
+   - Infer tags from purpose/content (domain keywords, categories)
+   - Refine purpose statements (ensure clarity, outcome-focus)
+   - Identify missing required fields
+   - Generate injection commands
+
+3. **LLM calls bash inject** (per file):
+   ```bash
+   bash _build/drafts/frontmatter-inject.sh inject prd-playbook.md \
+     purpose="Guide the creation of PRDs that clearly define the problem" \
+     tags="[prd, playbook, requirements, specifications]" \
+     status="authoritative"
+   ```
+
+4. **Validate** (Bash - fast):
+   ```bash
+   bash _build/drafts/frontmatter-inject.sh validate prd-playbook.md
+   ```
+
+5. **Commit changes** (Bash):
+   ```bash
+   git add <files>
+   git commit -m "docs: standardize frontmatter..."
+   ```
+
+**Advantages**:
+- ✅ ~90% token savings (bash handles extraction/validation)
+- ✅ Fast batch processing
+- ✅ Consistent YAML structure
+- ✅ LLM focuses on intelligent tasks only
+
+**Script Modes**:
+
+| Mode | Purpose | Cost | Example |
+|------|---------|------|---------|
+| `extract <file>` | Extract metadata from file | Bash only | `extract prd-playbook.md` |
+| `inject <file> [k=v...]` | Inject frontmatter block | Bash only | `inject file.md purpose="..." tags="[...]"` |
+| `update <file> <field> <val>` | Update single field | Bash only | `update file.md status authoritative` |
+| `validate <file>` | Validate structure | Bash only | `validate file.md` |
+| `batch-extract <files>` | Extract from multiple files | Bash only | `batch-extract *.md` |
+
+**Example Workflow**:
+
+```bash
+# Step 1: Batch extract (Bash - 0 tokens)
+bash _build/drafts/frontmatter-inject.sh batch-extract prd-playbook.md frd-playbook.md erd-playbook.md
+
+# Output (JSON):
+# [
+#   {"file": "prd-playbook.md", "type": "playbook", "purpose": "Guide PRD creation", ...},
+#   {"file": "frd-playbook.md", "type": "playbook", "purpose": "Guide FRD creation", ...}
+# ]
+
+# Step 2: LLM analyzes JSON, infers tags, refines purpose
+# LLM generates injection commands:
+
+# Step 3: LLM calls bash inject (per file)
+bash _build/drafts/frontmatter-inject.sh inject prd-playbook.md \
+  purpose="Guide the creation of PRDs that clearly define the problem, users, and success criteria" \
+  tags="[prd, playbook, requirements, specifications]"
+
+bash _build/drafts/frontmatter-inject.sh inject frd-playbook.md \
+  purpose="Guide the decomposition of product intent into verifiable functional behaviors" \
+  tags="[frd, playbook, requirements, functional-spec, testing]"
+
+# Step 4: Validate (Bash - 0 tokens)
+bash _build/drafts/frontmatter-inject.sh validate prd-playbook.md
+# Output: ✓ YAML frontmatter present, ✓ Closing delimiter present, ...
+
+# Step 5: Commit
+git add prd-playbook.md frd-playbook.md erd-playbook.md
+git commit -m "docs: standardize frontmatter for 3 playbooks"
+```
+
+---
+
+### Approach 2: Pure LLM Workflow (Slower, Higher Cost)
 
 **Process**:
 
@@ -433,6 +529,28 @@ This procedure can be executed autonomously by AI agents to apply frontmatter st
 
    Follows frontmatter-playbook.md"
    ```
+
+**Advantages**:
+- ✅ Works without bash script access
+- ✅ LLM sees full file context
+
+**Disadvantages**:
+- ❌ 10x slower for batch operations
+- ❌ High token cost (read entire files, analyze, generate)
+- ❌ Risk of Read-Edit tool errors
+
+---
+
+### Decision Matrix: Which Approach?
+
+| Scenario | Approach | Reason |
+|----------|----------|--------|
+| **Batch update (5+ files)** | Bash-Optimized | ~90% token savings, 10x faster |
+| **Single file update** | Either | Marginal difference |
+| **Complex tag inference** | Bash extract → LLM analyze | Bash extracts, LLM infers intelligently |
+| **Simple field update** | Bash `update` mode | Zero tokens, instant |
+| **No bash access** | Pure LLM | Only option |
+| **Validation only** | Bash `validate` | Zero tokens, fast checks |
 
 ### Example Transformation
 
