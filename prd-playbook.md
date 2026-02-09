@@ -1,9 +1,18 @@
+---
+type: playbook
+purpose: Guide the creation of PRDs that clearly define the problem, users, and success criteria—aligning stakeholders on what to build and why
+version: 1.0
+status: authoritative
+last_updated: 2026-02-08
+tags: [prd, playbook, requirements, specifications]
+---
+
 # PRD (Product Requirements Document) Playbook
 
 > **Purpose**: Guide the creation of PRDs that clearly define the problem, users, and success criteria—aligning stakeholders on what to build and why
 > **Version**: 1.0
 > **Status**: Authoritative
-> **Last Updated**: 2024-12-31
+> **Last Updated**: 2026-02-08
 
 ---
 

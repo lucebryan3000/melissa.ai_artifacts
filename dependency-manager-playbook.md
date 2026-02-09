@@ -1,9 +1,18 @@
+---
+type: playbook
+purpose: Manage NPM packages, Node.js runtime, Docker images, and external service dependencies with risk-aware validation workflows
+version: 1.2
+status: authoritative
+last_updated: 2026-02-08
+tags: [dependency-manager, playbook, npm, docker, security, versioning]
+---
+
 # Dependency Manager Playbook
 
 > **Purpose**: Manage NPM packages, Node.js runtime, Docker images, and external service dependencies with risk-aware validation workflows
 > **Version**: 1.2
 > **Status**: Authoritative
-> **Last Updated**: 2025-12-30
+> **Last Updated**: 2026-02-08
 
 ---
 

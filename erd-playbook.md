@@ -1,9 +1,18 @@
+---
+type: playbook
+purpose: Guide the creation of entity-relationship diagrams that accurately model domain data, relationships, and constraints
+version: 1.0
+status: authoritative
+last_updated: 2026-02-08
+tags: [erd, playbook, data-modeling, database, schema]
+---
+
 # ERD (Entity-Relationship Diagram) Playbook
 
 > **Purpose**: Guide the creation of entity-relationship diagrams that accurately model domain data, relationships, and constraints
 > **Version**: 1.0
 > **Status**: Authoritative
-> **Last Updated**: 2024-12-31
+> **Last Updated**: 2026-02-08
 
 ---
 

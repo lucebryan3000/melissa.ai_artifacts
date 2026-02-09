@@ -1,9 +1,18 @@
+---
+type: playbook
+purpose: Guide the decomposition of product intent into verifiable functional behaviors that can be implemented and tested
+version: 1.0
+status: authoritative
+last_updated: 2026-02-08
+tags: [frd, playbook, requirements, functional-spec, testing]
+---
+
 # FRD (Functional Requirements Document) Playbook
 
 > **Purpose**: Guide the decomposition of product intent into verifiable functional behaviors that can be implemented and tested
 > **Version**: 1.0
 > **Status**: Authoritative
-> **Last Updated**: 2024-12-31
+> **Last Updated**: 2026-02-08
 
 ---
 
