@@ -26,12 +26,9 @@ _build/
 _private/
 !_private/README.md
 
-# Claude/Codex local state (protect from accidental commits)
-.claude/.state
-.claude/sessions/
-.claude/cache/
-.claude/local/
-.codex/
+# Claude/Codex directories (completely ignored for local use)
+.claude/*
+.codex/*
 
 # IDE / Editor
 .vscode/

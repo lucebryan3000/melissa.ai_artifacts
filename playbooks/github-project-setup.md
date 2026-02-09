@@ -157,6 +157,10 @@ _build/
 _private/
 !_private/README.md
 
+# Claude/Codex directories (completely ignored for local use)
+.claude/*
+.codex/*
+
 # IDE / Editor
 .vscode/
 .idea/
@@ -237,9 +241,11 @@ trim_trailing_whitespace = false
 
 ---
 
-## 8. PLAY: Setup .claude Directory
+## 8. PLAY: Setup .claude Directory (OPTIONAL - Local Only)
 
 **Goal**: Initialize Claude Code integration with proper structure.
+
+**IMPORTANT**: The `.claude/` and `.codex/` directories are for **local development only** and are completely gitignored. This play is optional and only needed if you're using Claude Code or Codex locally.
 
 **Steps**:
 
